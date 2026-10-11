@@ -1,42 +1,90 @@
-# DebtTrap Escape 🛡️
+# 🛡️ DebtTrap Escape
 
-**An AI-powered loan safety web application with an integrated Gemini AI agent.**
+**Understand First, Decide with Confidence.**
 
-DebtTrap Escape helps users understand loan costs, analyze crypto collateral risks, compare loan offers, and identify potential warning signs before making financial decisions. Its AI Loan Safety Agent provides educational guidance about loan terms using Google Gemini.
+## 📌 About the Project
 
-## Features
+DebtTrap Escape is an AI-powered loan safety web application with an integrated Gemini AI assistant. It helps users understand loan costs, compare offers, assess crypto collateral risks, and identify potential warning signs before making financial decisions.
 
-- **Crypto Loan Risk Analyzer** — Estimates collateral risk and liquidation price.
-- **Loan Cost Calculator** — Calculates EMI, interest, and total repayment.
-- **Loan Document Checklist** — Helps users review important loan conditions.
-- **AI Loan Safety Agent** — Provides AI-powered guidance about loan terms.
-- **Loan Offer Comparator** — Compares loan costs and fees.
-- **Red-Flag Checker** — Highlights potential warning signs in loan offers.
-- **Crypto Evidence Vault** — Generates SHA-256 file hashes in the browser.
+## 🎯 Problem Statement
 
-## Tech Stack
+Loan terms, hidden fees, repayment penalties, and crypto collateral risks can be difficult to understand. DebtTrap Escape brings financial calculations and loan safety utilities together to help users make more informed decisions.
 
-- Next.js, React, TypeScript
+## 🧰 Tech Stack
+
+- Next.js
+- React
+- TypeScript
 - Tailwind CSS
-- Google Gemini API (`GEMINI_MODEL_AGENT`)
-- Web Crypto API
-- GitHub
+- Google Gemini API
+- Web Crypto API (SHA-256)
+- Git and GitHub
 
-**AI Model:** `gemini-3.8-flash`  
-**Package versions:** See `package.json` and the lockfile.
+For exact dependency versions, refer to `package.json` and the lockfile in the repository.
 
-## Project Links
+## 🤖 Supported AI Model
 
-- **GitHub:** https://github.com/vidishapanchal143/DebtTrap-Escape
-- **Demo Recording:** https://drive.google.com/drive/folders/1WbMNvAZPOxpLzgSSSwdtlUTy4pjLIW6O?usp=drive_link
-- **Live Demo:** Add the deployed website URL when available.
+- **Provider:** Google Gemini
+- **Model:** Configured through the `GEMINI_MODEL_AGENT` environment variable.
+- **Model ID/version:** Verify the exact value in your local `.env.local` configuration.
 
-## Future Scope
+## 🛠️ Tools and Utilities
 
-- Improve AI-agent tool integration and document analysis.
-- Explore Zero-Knowledge Proofs (ZK) and x402 integrations.
+- Crypto Loan Risk Analyzer
+- Loan EMI and Cost Calculator
+- Loan Document Review Checklist
+- AI Loan Safety Assistant
+- Loan Offer Comparator
+- Loan Red-Flag Checker
+- Crypto Evidence Vault with SHA-256 hashing
+
+*Note: These are application features and utilities. The independently callable tools supported by the AI agent must be verified separately.*
+
+## ✨ Key Features
+
+- Estimate crypto collateral value, loan-to-value ratio, and liquidation price.
+- Calculate estimated EMI, interest, and total loan repayment.
+- Review important loan agreement conditions.
+- Get AI-assisted educational guidance about loan-related questions.
+- Compare loan offers and their estimated costs.
+- Screen for potential warning signs in loan offers.
+- Generate file hashes locally in the browser to help check file integrity.
+
+## 🎥 Demo Video and Weekly Submissions
+
+**Week 1 (DebtTrapEscape.v1):**
+
+https://drive.google.com/drive/folders/1WbMNvAZPOxpLzgSSSwdtlUTy4pjLIW6O?usp=drive_link
+
+**Live Demo:** Add the deployed website URL here when available.
+
+## 🚀 Future Scope
+
+### Week 2
+- Improve AI-agent tool integration.
+- Enhance loan document analysis and input validation.
+- Improve usability and error handling.
+
+### Week 3
+- Explore Zero-Knowledge (ZK) integrations.
+- Explore x402 payment workflows.
 - Investigate live crypto data integrations.
 
-## Disclaimer
+## 🌐 Social Media Links
 
-This project provides educational information and estimates, not professional financial or legal advice. Crypto risk calculations depend on user-provided inputs, and the application does not execute blockchain transactions or verify lenders in real time.
+**X (Twitter) Profile:**  
+https://x.com/Vdsa143
+
+**Project Posts:**
+
+1. [DebtTrap Escape — Post 1](https://x.com/Vdsa143/status/2109343990252556665)
+2. [DebtTrap Escape — Post 2](https://x.com/Vdsa143/status/2109344030039654676)
+3. [DebtTrap Escape — Post 3](https://x.com/Vdsa143/status/2109344092329312486)
+
+## ⚠️ Disclaimer
+
+DebtTrap Escape provides educational information and estimates, not professional financial or legal advice. Crypto risk calculations depend on user-provided inputs. The application does not execute blockchain transactions or guarantee the legitimacy of lenders.
+
+---
+
+**Built for better-informed financial decisions.**
