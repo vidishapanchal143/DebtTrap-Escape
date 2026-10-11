@@ -31,6 +31,12 @@ Dependency versions are recorded in `package.json` and `package-lock.json`.
 
 ### Implemented in the current prototype
 - EMI Calculator: calculates estimated monthly loan repayments from user inputs.
+- Crypto Evidence Vault: calculates a local document's SHA-256 hash in the browser and compares it with a second file by its bytes. Documents are not uploaded.
+
+### Cryptographic roadmap
+Local SHA-256 document verification is implemented as the first crypto milestone. It verifies byte equality only; a matching hash does not prove document authenticity, authorship, or when a file was created.
+
+Base Sepolia on-chain registration, gas-sponsored EIP-712 registration, and x402 payments remain planned. They have not been separately implemented and tested, and the application does not claim to register hashes on-chain, sponsor gas, or process payments.
 
 ### Planned tools
 - Total Loan Cost Analyzer

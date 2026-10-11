@@ -2,16 +2,33 @@
 
 import { useMemo, useRef, useState } from "react";
 import {
-  ShieldCheck, Sparkles, Search, Sun, ChevronDown, FileText, TriangleAlert,
-  Scale, LockKeyhole, ArrowRight, UploadCloud, Calculator, BarChart3, GraduationCap,
-  LifeBuoy, Mic, Send, CheckCircle2, Menu, X, Bot, ScanText, BadgeCheck, CircleHelp
+  ShieldCheck, Sparkles, Search, ChevronDown, FileText, TriangleAlert,
+  LockKeyhole, ArrowRight, UploadCloud, Calculator, BarChart3,
+  LifeBuoy, Send, Menu, X, Bot, ScanText, BadgeCheck, CircleHelp,
+  Copy, Fingerprint
 } from "lucide-react";
 
 type Message = { role: "agent" | "user"; text: string };
+type HashingFile = "original" | "comparison" | null;
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
   style: "currency", currency: "INR", maximumFractionDigits: 0
 }).format(Number.isFinite(value) ? value : 0);
+
+async function sha256File(file: File) {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error("Web Crypto is unavailable. Open this page in a secure browser context and try again.");
+  }
+  const bytes = await file.arrayBuffer();
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 export default function Home() {
   const [amount, setAmount] = useState("50000");
@@ -25,7 +42,16 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [active, setActive] = useState("Home");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [originalHash, setOriginalHash] = useState("");
+  const [comparisonFile, setComparisonFile] = useState<File | null>(null);
+  const [comparisonHash, setComparisonHash] = useState("");
+  const [hashing, setHashing] = useState<HashingFile>(null);
+  const [vaultError, setVaultError] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const originalFileRef = useRef<HTMLInputElement>(null);
+  const comparisonFileRef = useRef<HTMLInputElement>(null);
 
   const calc = useMemo(() => {
     const principal = Math.max(0, Number(amount) || 0);
@@ -50,7 +76,53 @@ export default function Home() {
     setChatInput("");
   }
 
-  const nav = ["Home", "Analyze", "Compare", "Learn", "Support"];
+  const nav = ["Home", "Analyze", "Evidence", "Compare", "Learn", "Support"];
+
+  async function selectOriginalFile(file: File | undefined) {
+    if (!file) return;
+    setOriginalFile(file);
+    setOriginalHash("");
+    setComparisonFile(null);
+    setComparisonHash("");
+    setVaultError("");
+    setCopyMessage("");
+    if (comparisonFileRef.current) comparisonFileRef.current.value = "";
+    setHashing("original");
+    try {
+      setOriginalHash(await sha256File(file));
+    } catch (error) {
+      setVaultError(error instanceof Error ? error.message : "Could not calculate the SHA-256 hash.");
+    } finally {
+      setHashing(null);
+    }
+  }
+
+  async function selectComparisonFile(file: File | undefined) {
+    if (!file) return;
+    setComparisonFile(file);
+    setComparisonHash("");
+    setVaultError("");
+    setHashing("comparison");
+    try {
+      setComparisonHash(await sha256File(file));
+    } catch (error) {
+      setVaultError(error instanceof Error ? error.message : "Could not calculate the comparison hash.");
+    } finally {
+      setHashing(null);
+    }
+  }
+
+  async function copyOriginalHash() {
+    if (!originalHash) return;
+    setCopyMessage("");
+    setVaultError("");
+    try {
+      await navigator.clipboard.writeText(originalHash);
+      setCopyMessage("SHA-256 hash copied to clipboard.");
+    } catch {
+      setVaultError("Could not access the clipboard. Check browser permissions and try again.");
+    }
+  }
   return (
     <main className="min-h-screen overflow-hidden">
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
@@ -129,6 +201,67 @@ export default function Home() {
             <form className="chat-input" onSubmit={e=>{e.preventDefault();sendMessage();}}><input aria-label="Message the demo assistant" placeholder="Ask about your loan estimate…" value={chatInput} onChange={e=>setChatInput(e.target.value)}/><button aria-label="Send message" type="submit"><Send size={17}/></button></form>
             <p className="chat-disclaimer">Demo responses only. Gemini and live lender verification are not connected yet.</p>
           </div>
+        </div>
+      </section>
+
+      <section className="workspace wrap" id="evidence">
+        <div className="section-heading">
+          <div><div className="eyebrow">LOCAL DOCUMENT VERIFICATION</div><h2>Crypto Evidence Vault</h2></div>
+          <span className="secure-label"><LockKeyhole size={14}/> SHA-256 · processed in your browser</span>
+        </div>
+        <div className="panel vault-panel">
+          <div className="panel-heading">
+            <span className="mini-icon cyan"><Fingerprint size={20}/></span>
+            <div><h3>Verify document integrity</h3><p>Calculate a SHA-256 fingerprint and compare it with another local file.</p></div>
+          </div>
+          <div className="vault-grid">
+            <div className="vault-file-card">
+              <div className="vault-card-title"><span>01</span><div><h3>Original document</h3><p>Select a file to calculate its hash.</p></div></div>
+              <input ref={originalFileRef} className="visually-hidden" type="file" aria-label="Choose original document" onChange={event => void selectOriginalFile(event.target.files?.[0])}/>
+              <button className="secondary-btn vault-select" type="button" onClick={() => { if (originalFileRef.current) originalFileRef.current.value = ""; originalFileRef.current?.click(); }} disabled={hashing === "original"}>
+                <FileText size={17}/>{hashing === "original" ? "Hashing file…" : originalFile ? "Choose a different file" : "Choose original file"}
+              </button>
+              {originalFile ? (
+                <div className="vault-file-details"><span>File</span><strong>{originalFile.name}</strong><span>Size</span><strong>{formatFileSize(originalFile.size)}</strong></div>
+              ) : (
+                <div className="vault-empty">No original document selected. Your file remains on this device.</div>
+              )}
+              <div className="hash-label">SHA-256</div>
+              {originalHash ? (
+                <>
+                  <code className="hash-value">{originalHash}</code>
+                  <button className="copy-hash" type="button" onClick={() => void copyOriginalHash()}><Copy size={15}/> Copy hash</button>
+                </>
+              ) : <div className="hash-placeholder">{hashing === "original" ? "Calculating SHA-256…" : "The 64-character hash will appear here."}</div>}
+              {copyMessage && <p className="vault-success" role="status">{copyMessage}</p>}
+            </div>
+
+            <div className="vault-file-card">
+              <div className="vault-card-title"><span>02</span><div><h3>Compare another file</h3><p>Choose a second file and compare its actual bytes.</p></div></div>
+              <input ref={comparisonFileRef} className="visually-hidden" type="file" aria-label="Choose comparison document" disabled={!originalHash || hashing !== null} onChange={event => void selectComparisonFile(event.target.files?.[0])}/>
+              <button className="secondary-btn vault-select" type="button" disabled={!originalHash || hashing !== null} onClick={() => { if (comparisonFileRef.current) comparisonFileRef.current.value = ""; comparisonFileRef.current?.click(); }}>
+                <FileText size={17}/>{hashing === "comparison" ? "Hashing file…" : comparisonFile ? "Choose a different file" : "Choose comparison file"}
+              </button>
+              {comparisonFile ? (
+                <>
+                  <div className="vault-file-details"><span>File</span><strong>{comparisonFile.name}</strong><span>Size</span><strong>{formatFileSize(comparisonFile.size)}</strong></div>
+                  <div className="hash-label">SHA-256</div>
+                  {comparisonHash ? <code className="hash-value">{comparisonHash}</code> : <div className="hash-placeholder">Calculating SHA-256…</div>}
+                  {comparisonHash && originalHash && (
+                    <div className={comparisonHash === originalHash ? "comparison-result match" : "comparison-result mismatch"} role="status">
+                      <strong>{comparisonHash === originalHash ? "MATCH" : "MISMATCH"}</strong>
+                      <span>{comparisonHash === originalHash ? "The SHA-256 hash matches the original." : "The SHA-256 hashes differ."}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="vault-empty">{originalHash ? "No comparison file selected yet." : "Calculate the original file hash first."}</div>
+              )}
+            </div>
+          </div>
+          {vaultError && <p className="vault-error" role="alert">{vaultError}</p>}
+          <div className="privacy-callout vault-privacy"><LockKeyhole size={16}/><span><strong>Private by design</strong> Files are read and hashed locally using the browser Web Crypto API. Document bytes are not uploaded, stored, or sent to a server.</span></div>
+          <p className="fine-print vault-disclaimer"><CircleHelp size={14}/> Each hash is computed from the file&apos;s bytes; matching hashes indicate the contents match. This does not prove who created a document, when it was created, or whether it is authentic or trustworthy.</p>
         </div>
       </section>
 
