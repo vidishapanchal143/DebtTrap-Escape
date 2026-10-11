@@ -1,6 +1,7 @@
 "use client";
 
 import CryptoLoanRiskAnalyzer from "@/components/CryptoLoanRiskAnalyzer";
+import LoanSafetyTools from "@/components/LoanSafetyTools";
 import { useMemo, useRef, useState } from "react";
 import {
   ShieldCheck, Sparkles, Search, ChevronDown, FileText, TriangleAlert,
@@ -242,6 +243,16 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <section className="workspace wrap" id="loan-tools">
+  <div className="section-heading">
+    <div>
+      <div className="eyebrow">LOAN SAFETY TOOLS</div>
+      <h2>Compare offers. Spot warning signs.</h2>
+    </div>
+  </div>
+  <LoanSafetyTools />
+</section>
 
       <section className="workspace wrap" id="evidence">
         <div className="section-heading">
