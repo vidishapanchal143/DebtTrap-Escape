@@ -1,5 +1,6 @@
- "use client";
+"use client";
 
+import CryptoLoanRiskAnalyzer from "@/components/CryptoLoanRiskAnalyzer";
 import { useMemo, useRef, useState } from "react";
 import {
   ShieldCheck, Sparkles, Search, ChevronDown, FileText, TriangleAlert,
@@ -37,9 +38,10 @@ export default function Home() {
   const [fee, setFee] = useState("1500");
   const [fileName, setFileName] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: "agent", text: "Hi! I can help you understand loan terms, estimate repayments, and organize questions to verify. This starter uses demo chat replies; document AI and official-source checks are not connected yet." }
+    { role: "agent", text: "Hi! I’m DebtTrap Escape’s AI loan-awareness assistant. Ask me about EMIs, fees, repayment terms, or warning signs. I can explain information you share, but I do not verify lenders live or provide official financial or legal advice." }
   ]);
   const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
   const [active, setActive] = useState("Home");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -64,16 +66,41 @@ export default function Home() {
     return { principal, annualRate, term, upfrontFee, net: Math.max(0, principal - upfrontFee), emi, total, interest: Math.max(0, total - principal), outflow: total + upfrontFee };
   }, [amount, rate, months, fee]);
 
-  function sendMessage() {
-    const q = chatInput.trim();
-    if (!q) return;
-    const reply = /emi|installment|monthly|repay/i.test(q)
-      ? `Using your current inputs, the estimated monthly instalment is ${money(calc.emi)} for ${calc.term} months. This is an estimate; confirm lender fees, dates, and the actual schedule.`
-      : /fee|charge|received|deduct/i.test(q)
-      ? `If the ${money(calc.upfrontFee)} fee is deducted from the principal, estimated cash received is ${money(calc.net)}. Confirm whether the fee is upfront, financed, or charged separately.`
-      : "I can help review loan terms, but this demo has no connected document AI or live lender database yet. Try asking about EMI, repayment, fees, or the amount received.";
-    setMessages(prev => [...prev, { role: "user", text: q }, { role: "agent", text: reply }]);
+  async function sendMessage(message?: string) {
+    const q = (message ?? chatInput).trim();
+    if (!q || chatLoading) return;
+
+    setMessages(prev => [...prev, { role: "user", text: q }]);
     setChatInput("");
+    setChatLoading(true);
+
+    try {
+      const response = await fetch("/api/agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: q }),
+      });
+      const data: { reply?: string; error?: string; mode?: string } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "The assistant could not respond.");
+      }
+      if (typeof data.reply !== "string" || !data.reply.trim()) {
+        throw new Error("The assistant returned an empty response.");
+      }
+
+      setMessages(prev => [...prev, { role: "agent", text: data.reply!.trim() }]);
+    } catch (error) {
+      const messageText = error instanceof Error
+        ? error.message
+        : "Connection failed. Please try again.";
+      setMessages(prev => [...prev, {
+        role: "agent",
+        text: `Sorry, I couldn't get an AI response. ${messageText} If this keeps happening, check that the development server is running and the Gemini server settings are configured.`,
+      }]);
+    } finally {
+      setChatLoading(false);
+    }
   }
 
   const nav = ["Home", "Analyze", "Evidence", "Compare", "Learn", "Support"];
@@ -165,6 +192,17 @@ export default function Home() {
         <article className="feature-card"><div className="feature-icon coral"><LifeBuoy/></div><div><h3>Find next steps</h3><p>Organize questions and records for help.</p></div><ArrowRight size={17}/></article>
       </section>
 
+      <section className="workspace wrap" id="crypto">
+  <div className="section-heading">
+    <div>
+      <div className="eyebrow">WEB3 LOAN SAFETY</div>
+      <h2>Understand your crypto loan risk.</h2>
+    </div>
+  </div>
+
+  <CryptoLoanRiskAnalyzer />
+</section>
+
       <section className="workspace wrap" id="analyze">
         <div className="section-heading"><div><div className="eyebrow">LOAN WORKSPACE</div><h2>Make the numbers make sense.</h2></div><span className="secure-label"><LockKeyhole size={14}/> Local demo · no file upload</span></div>
         <div className="workspace-grid">
@@ -195,11 +233,12 @@ export default function Home() {
           </div>
 
           <div className="panel chat-panel" id="support">
-            <div className="chat-head"><div className="agent-avatar"><Bot size={22}/></div><div><h3>Loan Safety Agent</h3><p><span className="live-dot"/> Demo assistant · rules-based replies</p></div><span className="demo-pill">DEMO</span></div>
+            <div className="chat-head"><div className="agent-avatar"><Bot size={22}/></div><div><h3>Loan Safety Agent</h3><p><span className="live-dot"/> Gemini AI · loan-awareness support</p></div><span className="demo-pill">AI</span></div>
             <div className="chat-messages">{messages.map((m,i)=><div key={i} className={`chat-bubble ${m.role}`}>{m.role==="agent"&&<span className="bubble-avatar"><Sparkles size={14}/></span>}{m.text}</div>)}</div>
-            <div className="quick-prompts">{["Explain my EMI","What about fees?","What should I verify?"].map(q=><button key={q} onClick={()=>{setChatInput(q);}}>{q}</button>)}</div>
-            <form className="chat-input" onSubmit={e=>{e.preventDefault();sendMessage();}}><input aria-label="Message the demo assistant" placeholder="Ask about your loan estimate…" value={chatInput} onChange={e=>setChatInput(e.target.value)}/><button aria-label="Send message" type="submit"><Send size={17}/></button></form>
-            <p className="chat-disclaimer">Demo responses only. Gemini and live lender verification are not connected yet.</p>
+            <div className="quick-prompts">{["Explain my EMI","What about fees?","What should I verify?"].map(q=><button key={q} type="button" disabled={chatLoading} onClick={()=>void sendMessage(q)}>{q}</button>)}</div>
+            <form className="chat-input" onSubmit={e=>{e.preventDefault();void sendMessage();}}><input aria-label="Message the AI loan assistant" placeholder="Ask about your loan…" value={chatInput} onChange={e=>setChatInput(e.target.value)} disabled={chatLoading} maxLength={2000}/><button aria-label="Send message" type="submit" disabled={chatLoading || !chatInput.trim()}><Send size={17}/></button></form>
+            {chatLoading && <p className="chat-disclaimer" role="status">Gemini is thinking…</p>}
+            <p className="chat-disclaimer">AI-generated educational guidance only. Live lender verification and document analysis are not connected. Do not share Aadhaar, PAN, OTPs, passwords, or other sensitive personal information.</p>
           </div>
         </div>
       </section>
