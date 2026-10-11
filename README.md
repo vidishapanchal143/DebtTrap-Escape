@@ -25,8 +25,9 @@ For exact dependency versions, refer to `package.json` and the lockfile in the r
 ## 🤖 Supported AI Model
 
 - **Provider:** Google Gemini
-- **Model:** Configured through the `GEMINI_MODEL_AGENT` environment variable.
-- **Model ID/version:** Verify the exact value in your local `.env.local` configuration.
+- **Model:** Gemini Flash
+- **Configured through:** `GEMINI_MODEL_AGENT`
+- **Model version:** `gemini-3.8-flash` (verify against the configured model ID before submission)
 
 ## 🛠️ Tools and Utilities
 
