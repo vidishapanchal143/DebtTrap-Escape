@@ -1,8 +1,8 @@
 # DebtTrap Escape 🛡️
 
-**Understand First, Decide with Confidence.**
+**An AI-powered loan safety web application with an integrated Gemini AI agent.**
 
-DebtTrap Escape is an AI-powered web application that helps users understand loan costs, review loan terms, compare offers, and identify potential risks before making financial decisions.
+DebtTrap Escape helps users understand loan costs, analyze crypto collateral risks, compare loan offers, and identify potential warning signs before making financial decisions. Its AI Loan Safety Agent provides educational guidance about loan terms using Google Gemini.
 
 ## Features
 
