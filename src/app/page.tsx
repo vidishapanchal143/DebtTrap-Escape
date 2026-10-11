@@ -2,6 +2,7 @@
 
 import CryptoLoanRiskAnalyzer from "@/components/CryptoLoanRiskAnalyzer";
 import LoanSafetyTools from "@/components/LoanSafetyTools";
+import LoanDocumentChecklist from "@/components/LoanDocumentChecklist";
 import { useMemo, useRef, useState } from "react";
 import {
   ShieldCheck, Sparkles, Search, ChevronDown, FileText, TriangleAlert,
@@ -202,6 +203,16 @@ export default function Home() {
   </div>
 
   <CryptoLoanRiskAnalyzer />
+</section>
+
+<section className="workspace wrap" id="document-review">
+  <div className="section-heading">
+    <div>
+      <div className="eyebrow">DOCUMENT SAFETY</div>
+      <h2>Review your loan terms.</h2>
+    </div>
+  </div>
+  <LoanDocumentChecklist />
 </section>
 
       <section className="workspace wrap" id="analyze">
