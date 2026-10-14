@@ -1,156 +1,88 @@
-
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { ArrowRight, CheckCircle2, CircleAlert, Scale, ShieldAlert } from "lucide-react";
+import { estimateLoan } from "@/lib/loan-math";
+
+type Offer = { amount: string; rate: string; months: string; fees: string };
 
 export default function LoanSafetyTools() {
-  const [a, setA] = useState({ amount: "100000", rate: "12", months: "24", fees: "2000" });
-  const [b, setB] = useState({ amount: "100000", rate: "15", months: "24", fees: "1000" });
-
+  const [a, setA] = useState<Offer>({ amount: "100000", rate: "12", months: "24", fees: "2000" });
+  const [b, setB] = useState<Offer>({ amount: "100000", rate: "15", months: "24", fees: "1000" });
   const [flags, setFlags] = useState<string[]>([]);
   const warnings = [
-    "Lender asks for an upfront payment to guarantee approval",
+    "An upfront payment is requested in exchange for guaranteed approval",
     "Loan terms or fees are hidden or unclear",
     "You are pressured to sign immediately",
-    "Guaranteed approval regardless of eligibility",
-    "Lender asks for an OTP, password, or wallet seed phrase",
-    "Repayment penalties are not clearly explained",
+    "Approval is guaranteed regardless of eligibility",
+    "An OTP, password or wallet recovery phrase is requested",
+    "Late-payment or early-closure penalties are not clearly explained",
   ];
 
-  function calculate(v: typeof a) {
-    const p = Number(v.amount);
+  function calculate(v: Offer) {
+    const principal = Number(v.amount);
     const annual = Number(v.rate);
     const months = Number(v.months);
     const fees = Number(v.fees);
-
-    if (
-      !Number.isFinite(p) || !Number.isFinite(annual) ||
-      !Number.isFinite(months) || !Number.isFinite(fees) ||
-      p <= 0 || annual < 0 || months <= 0 || fees < 0 ||
-      !Number.isInteger(months)
-    ) return null;
-
-    const r = annual / 1200;
-    const emi = r === 0
-      ? p / months
-      : p * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
-
-    return { emi, total: emi * months + fees, interest: emi * months - p, fees };
+    if (!Number.isFinite(principal) || !Number.isFinite(annual) || !Number.isFinite(months) || !Number.isFinite(fees) || principal <= 0 || annual < 0 || months <= 0 || fees < 0 || !Number.isInteger(months) || months > 600) return null;
+    const estimate = estimateLoan(principal, annual, months, fees);
+    return { emi: estimate.emi, total: estimate.totalOutflowIncludingFee, interest: estimate.interestEstimate, fees };
   }
 
-  const first = useMemo(() => calculate(a), [a]);
-  const second = useMemo(() => calculate(b), [b]);
+  const first = calculate(a);
+  const second = calculate(b);
+  const money = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-  const money = (n: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency", currency: "INR", maximumFractionDigits: 0,
-    }).format(n);
-
-  function fields(
-    label: string,
-    value: typeof a,
-    setValue: (v: typeof a) => void
-  ) {
-    const inputClass = "mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-slate-900";
+  function fields(label: string, value: Offer, setValue: (v: Offer) => void, side: "a" | "b") {
     return (
-      <div className="rounded-xl border border-slate-200 p-4">
-        <h3 className="mb-3 font-bold">{label}</h3>
-        {([
-          ["amount", "Loan amount (₹)"],
-          ["rate", "Annual interest rate (%)"],
-          ["months", "Repayment months"],
-          ["fees", "Additional fees (₹)"],
-        ] as const).map(([key, title]) => (
-          <label key={key} className="mb-3 block text-sm">
-            {title}
-            <input
-              className={inputClass}
-              type="number"
-              min="0"
-              step="any"
-              value={value[key]}
-              onChange={(e) => setValue({ ...value, [key]: e.target.value })}
-            />
-          </label>
-        ))}
+      <div className="offer-input-card">
+        <div className="offer-card-title"><span className={`offer-letter ${side}`}>{side.toUpperCase()}</span><div><h3>{label}</h3><p>Enter the terms exactly as offered.</p></div></div>
+        <div className="offer-form-grid">
+          {([ ["amount", "Loan amount (₹)"], ["rate", "Annual interest (%)"], ["months", "Repayment months"], ["fees", "Known upfront fees (₹)"] ] as const).map(([key, title]) => (
+            <label key={key} className="loan-field">{title}<input type="number" min="0" step="any" value={value[key]} onChange={e => setValue({ ...value, [key]: e.target.value })} /></label>
+          ))}
+        </div>
         {(() => {
           const result = calculate(value);
-          return result ? (
-            <div className="mt-3 space-y-1 rounded-lg bg-slate-50 p-3 text-sm">
-              <p>Monthly EMI: <strong>{money(result.emi)}</strong></p>
-              <p>Total interest: <strong>{money(result.interest)}</strong></p>
-              <p>Total cost including fees: <strong>{money(result.total)}</strong></p>
-            </div>
-          ) : <p className="text-sm text-red-600">Enter a positive loan amount, valid rate, whole repayment months, and non-negative fees.</p>;
+          return result ? <div className="offer-mini-results"><div><span>Monthly EMI</span><strong>{money(result.emi)}</strong></div><div><span>Total estimated cost</span><strong>{money(result.total)}</strong></div></div> : <p className="inline-validation">Enter a positive loan amount, a valid rate, whole months (up to 600), and non-negative fees.</p>;
         })()}
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 sm:p-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Tool 1</p>
-        <h2 className="mb-2 text-2xl font-bold">Loan Offer Comparator</h2>
-        <p className="mb-5 text-sm text-slate-600">
-          Enter both offers to compare estimated EMI, interest and total repayment.
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          {fields("Offer A", a, setA)}
-          {fields("Offer B", b, setB)}
+    <div className="loan-safety-stack">
+      <section className="consumer-card compare-card">
+        <div className="consumer-card-heading">
+          <span className="consumer-icon"><Scale size={21} /></span>
+          <div><p className="consumer-kicker">COST COMPARISON</p><h3>Compare two loan offers</h3><p className="consumer-description">Compare the same amount and repayment period to see how rates and known fees change the estimated cost.</p></div>
         </div>
+        <div className="offer-grid">{fields("Offer A", a, setA, "a")}{fields("Offer B", b, setB, "b")}</div>
         {first && second && (
-          <div className="mt-4 rounded-xl bg-blue-50 p-4 text-sm text-slate-800">
-            {Math.abs(first.total - second.total) < 1
-              ? "Both offers have approximately the same total cost."
-              : `Offer ${first.total < second.total ? "A" : "B"} has the lower estimated total cost by ${money(Math.abs(first.total - second.total))}.`}
-            <p className="mt-2 text-xs text-slate-600">
-              Compare equivalent loan amounts and terms. Actual lender fees, taxes and APR may differ.
-            </p>
+          <div className={`comparison-summary ${Math.abs(first.total - second.total) < 1 ? "even" : ""}`}>
+            <span className="summary-icon"><CheckCircle2 size={21}/></span>
+            <div className="summary-copy">
+              <strong>{Math.abs(first.total - second.total) < 1 ? "The estimated total costs are very similar" : `Offer ${first.total < second.total ? "A" : "B"} has the lower estimated total cost`}</strong>
+              <p>{Math.abs(first.total - second.total) < 1 ? "Based on the values entered, there is no meaningful difference in total cost." : `Estimated difference: ${money(Math.abs(first.total - second.total))} over the stated term.`} Compare the final written terms before deciding.</p>
+            </div>
           </div>
         )}
+        <p className="consumer-note">Estimates exclude charges you have not entered. Different loan amounts or tenures are not a like-for-like comparison.</p>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 sm:p-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-rose-700">Tool 2</p>
-        <h2 className="mb-2 text-2xl font-bold">Loan Red-Flag Checker</h2>
-        <p className="mb-4 text-sm text-slate-600">
-          Select any warning signs present in the offer. This is a screening checklist, not proof of fraud.
-        </p>
-        <div className="space-y-3">
-          {warnings.map((warning) => (
-            <label key={warning} className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={flags.includes(warning)}
-                onChange={(e) => setFlags((old) =>
-                  e.target.checked
-                    ? [...old, warning]
-                    : old.filter((item) => item !== warning)
-                )}
-              />
-              <span>{warning}</span>
-            </label>
-          ))}
+      <section className="consumer-card warning-card">
+        <div className="consumer-card-heading">
+          <span className="consumer-icon warning"><ShieldAlert size={21} /></span>
+          <div><p className="consumer-kicker">OFFER CHECK</p><h3>Warning signs worth checking</h3><p className="consumer-description">Select anything that applies to the offer or lender interaction. A warning sign is a reason to pause and verify—not proof of fraud by itself.</p></div>
         </div>
-        <div className={`mt-4 rounded-xl p-4 ${flags.length >= 3 ? "bg-rose-50" : flags.length > 0 ? "bg-amber-50" : "bg-emerald-50"}`}>
-          <h3 className="font-bold">
-            {flags.length >= 3 ? "Multiple warning signs selected" : flags.length > 0 ? "Warning signs identified" : "No warning signs selected"}
-          </h3>
-          <p className="mt-1 text-sm">
-            {flags.length >= 3
-              ? "Pause before paying or signing. Independently verify the lender and all terms."
-              : flags.length > 0
-              ? "Investigate each selected issue and request written clarification before proceeding."
-              : "No boxes selected does not mean the offer is safe. Review the full agreement."}
-          </p>
-          {flags.length > 0 && (
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
-              {flags.map((flag) => <li key={flag}>{flag}</li>)}
-            </ul>
-          )}
+        <div className="warning-options">
+          {warnings.map(warning => <label key={warning} className="warning-option"><input type="checkbox" checked={flags.includes(warning)} onChange={e => setFlags(old => e.target.checked ? [...old, warning] : old.filter(item => item !== warning))}/><span>{warning}</span><ArrowRight className="warning-arrow" size={15}/></label>)}
         </div>
+        <div className={`warning-summary ${flags.length >= 3 ? "high" : flags.length > 0 ? "medium" : "clear"}`}>
+          <div className="warning-summary-icon"><CircleAlert size={19}/></div>
+          <div><strong>{flags.length >= 3 ? "Several warning signs selected" : flags.length > 0 ? `${flags.length} item${flags.length === 1 ? "" : "s"} to investigate` : "No warning signs selected"}</strong><p>{flags.length >= 3 ? "Pause before paying or signing. Independently verify the lender and ask for complete written terms." : flags.length > 0 ? "Ask for written clarification and independently verify each concern before proceeding." : "Nothing selected does not establish that an offer is safe. Review the complete agreement and verify the lender."}</p></div>
+        </div>
+        {flags.length > 0 && <ul className="selected-warning-list">{flags.map(flag => <li key={flag}>{flag}</li>)}</ul>}
       </section>
     </div>
   );
