@@ -1,17 +1,50 @@
 "use client";
 
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import ResultCarousel from '@/components/ResultCarousel';
+import { estimateLoan } from "../lib/loan-math";
+import {
+  ShieldCheck,
+  FileSearch,
+  ChevronDown,
+  X,
+  Menu,
+  Calculator,
+  TriangleAlert,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  LockKeyhole,
+  FileText,
+  Bot,
+  Sparkles,
+  CircleHelp,
+  CheckCircle2,
+  ClipboardCheck,
+  Scale,
+  Activity,
+  AlertTriangle,
+  Coins,
+  Gauge,
+  ShieldAlert,
+  RotateCcw,
+  BadgeCheck,
+  LifeBuoy,
+  BarChart3,
+  Fingerprint,
+  Copy,
+  Wallet,
+  RefreshCw,
+  XCircle,
+  History,
+  Send,
+} from 'lucide-react';
 import CryptoLoanRiskAnalyzer from "@/components/CryptoLoanRiskAnalyzer";
+import { BrandLogo } from '@/components/BrandLogo';
+import { calculateCryptoCollateralRisk } from '@/lib/crypto-loan-risk';
 import LoanSafetyTools from "@/components/LoanSafetyTools";
 import LoanDocumentChecklist from "@/components/LoanDocumentChecklist";
-import { estimateLoan } from "@/lib/loan-math";
-import { calculateCryptoCollateralRisk } from "@/lib/crypto-loan-risk";
-import { useMemo, useRef, useState } from "react";
-import {
-  ShieldCheck, Sparkles, ChevronDown, FileText, TriangleAlert,
-  LockKeyhole, ArrowRight, Calculator, BarChart3,
-  LifeBuoy, Send, Menu, X, Bot, BadgeCheck, CircleHelp,
-  Copy, Fingerprint, ClipboardCheck, Scale, FileSearch, ShieldAlert, Coins, Check, ArrowLeft, RotateCcw
-} from "lucide-react";
+
 
 type Message = { role: "agent" | "user"; text: string };
 type HashingFile = "original" | "comparison" | null;
@@ -103,6 +136,96 @@ export default function Home() {
   const originalFileRef = useRef<HTMLInputElement>(null);
   const comparisonFileRef = useRef<HTMLInputElement>(null);
 
+  // ── Wallet state ─────────────────────────────────────────────────────────────
+  type WalletStep = "idle" | "prepared" | "confirmed" | "cancelled" | "error";
+  type TxRecord = { id: string; status: string; amount: string; recipient: string; createdAt: string };
+  type PreparedInfo = { recipient: string; amountCents: number; feeCents: number; totalDebit: number; idempotencyKey: string };
+
+  const [walletBalance, setWalletBalance] = useState<{ balance: number; asset: string } | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletStep, setWalletStep] = useState<WalletStep>("idle");
+  const [transferRecipient, setTransferRecipient] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [preparedTx, setPreparedTx] = useState<PreparedInfo | null>(null);
+  const [confirmedTxId, setConfirmedTxId] = useState("");
+  const [walletError, setWalletError] = useState("");
+  const [txHistory, setTxHistory] = useState<TxRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const fetchBalance = useCallback(async () => {
+    setWalletLoading(true);
+    try {
+      const res = await fetch("/api/wallet/balance");
+      const data = await res.json() as { balance?: number | null; asset?: string; error?: string };
+      if (res.ok && typeof data.balance === "number" && !isNaN(data.balance)) {
+        setWalletBalance({ balance: data.balance, asset: data.asset ?? "SIM-USDC" });
+      }
+    } catch { /* network error — silently ignore */ }
+    finally { setWalletLoading(false); }
+  }, []);
+
+  const fetchHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/wallet/history?limit=5");
+      const data = await res.json() as { history?: TxRecord[] };
+      if (data.history) setTxHistory(data.history);
+    } catch { /* ignore */ }
+    finally { setHistoryLoading(false); }
+  }, []);
+
+  useEffect(() => { void fetchBalance(); void fetchHistory(); }, [fetchBalance, fetchHistory]);
+
+  async function handlePrepare() {
+    setWalletError("");
+    const recipientAddr = transferRecipient.trim();
+    const amt = Number(transferAmount);
+    if (!/^0x[0-9A-Fa-f]{8,40}$/.test(recipientAddr)) { setWalletError("Enter a valid 0x… address (8–40 hex chars)."); return; }
+    if (!Number.isFinite(amt) || amt <= 0) { setWalletError("Enter a positive amount."); return; }
+    setWalletLoading(true);
+    try {
+      const res = await fetch("/api/wallet/prepare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipient: recipientAddr, amount: amt }) });
+      const data = await res.json() as PreparedInfo & { error?: string };
+      if (!res.ok) { setWalletError(data.error ?? "Preparation failed."); return; }
+      setPreparedTx({ recipient: data.recipient, amountCents: data.amountCents, feeCents: data.feeCents, totalDebit: data.totalDebit, idempotencyKey: data.idempotencyKey });
+      setWalletStep("prepared");
+    } catch { setWalletError("Network error — could not reach wallet API."); }
+    finally { setWalletLoading(false); }
+  }
+
+  async function handleConfirm() {
+    if (!preparedTx) return;
+    setWalletLoading(true); setWalletError("");
+    try {
+      const res = await fetch("/api/wallet/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(preparedTx) });
+      const data = await res.json() as { transactionId?: string; error?: string };
+      if (!res.ok) { setWalletError(data.error ?? "Confirmation failed."); return; }
+      setConfirmedTxId(data.transactionId ?? "");
+      setWalletStep("confirmed");
+      void fetchBalance(); void fetchHistory();
+    } catch { setWalletError("Network error — could not reach wallet API."); }
+    finally { setWalletLoading(false); }
+  }
+
+  async function handleCancel() {
+    if (!preparedTx) return;
+    setWalletLoading(true); setWalletError("");
+    try {
+      const res = await fetch("/api/wallet/cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idempotencyKey: preparedTx.idempotencyKey }) });
+      const data = await res.json() as { status?: string; error?: string };
+      if (res.status === 409) { setWalletError("This transfer was already confirmed and cannot be cancelled."); return; }
+      if (!res.ok && res.status !== 404) { setWalletError(data.error ?? "Cancellation failed."); return; }
+      setWalletStep("cancelled");
+      void fetchBalance(); void fetchHistory();
+    } catch { setWalletError("Network error — could not reach wallet API."); }
+    finally { setWalletLoading(false); }
+  }
+
+  function resetWallet() {
+    setWalletStep("idle"); setPreparedTx(null); setConfirmedTxId(""); setWalletError("");
+    setTransferRecipient(""); setTransferAmount("");
+  }
+
   const calc = useMemo(() => {
     const principal = Math.max(0, Number(amount) || 0);
     const annualRate = Math.max(0, Number(rate) || 0);
@@ -176,6 +299,7 @@ export default function Home() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function buildReviewPrompt() {
     if (reviewGoal === "loan") {
       return [
@@ -366,6 +490,7 @@ export default function Home() {
   const nav = [
     { label: "Home", target: "home" },
     { label: "Start here", target: "start-review" },
+    { label: "AI Guide", target: "support" },
     { label: "Compare offers", target: "loan-tools" },
     { label: "Agreement checklist", target: "document-review" },
     { label: "Evidence", target: "evidence" },
@@ -421,7 +546,7 @@ export default function Home() {
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
         <a className="brand" href="#" onClick={() => setActive("Home")}>
-          <span className="brand-mark"><ShieldCheck size={27} /></span>
+          <BrandLogo className="brand-mark" />
           <span><strong>DebtTrap <b>Escape</b></strong><small>Know. Check. Compare. Stay Safe.</small></span>
         </a>
         <nav className={mobileMenu ? "nav-links nav-open" : "nav-links"}>
@@ -429,7 +554,6 @@ export default function Home() {
         </nav>
         <div className="top-actions"><button className="header-cta" aria-label="Start a loan safety review" onClick={() => { setActive("Start here"); document.getElementById("start-review")?.scrollIntoView({behavior:"smooth"}); }}><FileSearch size={16}/> Start a check</button><span className="lang-pill">EN <ChevronDown size={14}/></span><button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X/> : <Menu/>}</button></div>
       </header>
-
       <section className="hero wrap" id="home">
         <div className="hero-copy">
           <div className="eyebrow"><span className="pulse-dot"/> YOUR PERSONAL LOAN SAFETY ASSISTANT</div>
@@ -450,6 +574,8 @@ export default function Home() {
           <div className="visual-caption"><span className="live-dot"/> A clearer view of your loan <span className="caption-tag">HERE TO HELP</span></div>
         </div>
       </section>
+
+  
 
       <section className="guided-review wrap" id="start-review" aria-labelledby="guided-title">
         <div className="guided-heading">
@@ -489,9 +615,9 @@ export default function Home() {
                 </button>
               </div>
               <div className="guided-actions"><span className="guided-step-hint">You can change your choice at any time.</span><button className="primary-btn" type="button" onClick={() => {setReviewValidation("");setReviewStep(2);}}>Continue <ArrowRight size={17}/></button></div>
-            </>}
+            </> }
 
-            {reviewStep === 2 && <>
+            {reviewStep === 2 && (<>
               <div className="guided-card-title guided-card-title-row"><div><span className="guided-overline">STEP 2 OF 3</span><h3>{reviewGoal === "loan" ? "Enter the loan details" : reviewGoal === "compare" ? "Add both offers" : reviewGoal === "warning" ? "Describe what happened" : "Enter your collateral assumptions"}</h3><p>{reviewGoal === "loan" ? "Use the figures from the offer or agreement. We will label anything that is still unknown." : reviewGoal === "compare" ? "Use the same loan amount and term for a fair estimate." : reviewGoal === "warning" ? "Paste the relevant wording or describe the request. Leave out private identifiers." : "These are scenario estimates using a price you provide—not live market data."}</p></div><button className="text-back" type="button" onClick={() => {setReviewStep(1);setReviewValidation("");}}><ArrowLeft size={15}/> Change goal</button></div>
 
               {reviewGoal === "loan" && <div className="guided-fields">
@@ -521,26 +647,28 @@ export default function Home() {
 
               {reviewValidation && <p className="guided-validation" role="alert"><CircleHelp size={16}/>{reviewValidation}</p>}
               <div className="guided-actions"><button className="secondary-btn" type="button" onClick={() => setReviewStep(1)}><ArrowLeft size={16}/> Back</button><span className="guided-step-hint">You’ll see a plain-language result here.</span><button className="primary-btn" type="button" onClick={runGuidedReview}>Run my review <ArrowRight size={17}/></button></div>
-            </>}
+            </>)}
 
             {reviewStep === 3 && <>
               <div className="guided-card-title"><span className="guided-overline">STEP 3 OF 3</span><h3>Your review is ready to view</h3><p>The result appears beside this panel. Review its assumptions and limitations before relying on it.</p></div>
               <div className="review-summary-box"><span className="review-summary-check"><Check size={19}/></span><div><strong>{reviewGoal === "loan" ? "Loan cost review" : reviewGoal === "compare" ? "Offer comparison" : reviewGoal === "warning" ? "Warning-sign review" : "Crypto collateral estimate"}</strong><p>{reviewGoal === "loan" ? `Loan amount ${reviewAmount ? `₹${Number(reviewAmount).toLocaleString("en-IN")}` : "not entered"}, ${reviewRate || "—"}% annual rate, ${reviewMonths || "—"} months.` : reviewGoal === "compare" ? `Two offers for ${reviewAmount ? `₹${Number(reviewAmount).toLocaleString("en-IN")}` : "the same loan amount"} over ${reviewMonths || "—"} months.` : reviewGoal === "warning" ? "Your described offer or lender interaction was submitted for review." : `${cryptoQuantity || "—"} ETH collateral using a user-supplied price assumption.`}</p></div></div>
               {reviewError && <div className="guided-error" role="alert"><strong>We couldn’t complete the review</strong><p>{reviewError}</p><button className="secondary-btn" type="button" onClick={runGuidedReview}>Try again</button></div>}
-              <div className="guided-actions guided-actions-wrap"><button className="secondary-btn" type="button" onClick={() => {setReviewStep(2);setReviewResult("");setReviewError("");}}><ArrowLeft size={16}/> Edit details</button><button className="primary-btn" type="button" onClick={resetGuidedReview}><RotateCcw size={16}/> Start another review</button></div>
-            </>}
-          </div>
+              <div className="guided-actions guided-actions-wrap"><button className="secondary-btn" type="button" onClick={() => {setReviewStep(2);setReviewResult("");setReviewError("");}}><ArrowLeft size={16}/> Edit details</button><button className="primary-btn" type="button" onClick={resetGuidedReview}><RotateCcw size={16}/> Start another review</button></div></> }
+
+          
+</div>
 
           <aside className="guided-result-card" aria-live="polite" aria-label="Loan review result">
             <div className="guided-result-top"><div className="guided-result-mark"><ShieldCheck size={21}/></div><div><span className="guided-overline">YOUR LOAN REVIEW</span><h3>{reviewResult ? "Your results" : reviewLoading ? "Review in progress" : "What you’ll get"}</h3></div><span className={`guided-status ${reviewResult ? "done" : reviewLoading ? "working" : ""}`}>{reviewResult ? "READY" : reviewLoading ? "WORKING" : "PREVIEW"}</span></div>
             {!reviewLoading && !reviewResult && !reviewError && <div className="result-empty-state"><div className="result-empty-graphic"><FileSearch size={30}/></div><h4>Your answer will appear here</h4><p>After you enter the relevant details and run the review, this space will show the result in plain language.</p><div className="result-includes"><span><Check size={14}/> Useful numbers or findings</span><span><Check size={14}/> Assumptions and unknowns</span><span><Check size={14}/> Practical next steps</span></div></div>}
             {reviewLoading && <div className="result-loading-state"><span className="result-spinner"/><h4>Reviewing the details you shared…</h4><p>This may take a few seconds. Keep this page open.</p></div>}
             {reviewError && !reviewLoading && !reviewResult && <div className="result-error-state"><span className="result-error-mark"><CircleHelp size={22}/></span><h4>We couldn’t finish this review</h4><p>{reviewError}</p><p className="result-error-hint">Check your connection and AI service settings. Your entered details remain in the form.</p></div>}
-            {reviewResult && !reviewLoading && <div className="guided-result-body">{renderReportText(reviewResult)}</div>}
+            {reviewResult && !reviewLoading && <ResultCarousel content={reviewResult} />}
             <div className="guided-result-footer"><LockKeyhole size={14}/><span>Estimates are not a lender quote. This service does not approve loans, verify every lender, or replace qualified financial or legal advice.</span></div>
           </aside>
         </div>
       </section>
+
 
       <section className="feature-strip wrap" id="how">
         <article className="feature-card"><div className="feature-icon blue"><Calculator/></div><div><h3>Know your real cost</h3><p>Estimate monthly payments and total outflow.</p></div><ArrowRight size={17}/></article>
@@ -691,8 +819,146 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="workspace wrap" id="wallet">
+        <div className="section-heading">
+          <div>
+            <div className="eyebrow">DEMO WALLET · SIMULATION ONLY</div>
+            <h2>Transfer flow — prepare, confirm, cancel.</h2>
+          </div>
+          <span className="secure-label"><LockKeyhole size={14}/> No real funds — local ledger only</span>
+        </div>
+
+        <div className="panel" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.5rem"}}>
+          {/* Balance card */}
+          <div style={{background:"var(--panel-bg,#0f1729)",borderRadius:"1rem",padding:"1.5rem",border:"1px solid rgba(99,102,241,.25)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:".75rem",marginBottom:"1rem"}}>
+              <span style={{background:"rgba(99,102,241,.15)",borderRadius:".5rem",padding:".5rem"}}><Wallet size={20} style={{color:"#818cf8"}}/></span>
+              <div><div style={{fontSize:".7rem",letterSpacing:".1em",color:"#818cf8",textTransform:"uppercase"}}>Demo Wallet Balance</div>
+                <div style={{fontSize:"1.6rem",fontWeight:700,color:"#e2e8f0"}}>
+                  {walletBalance && typeof walletBalance.balance === "number" && !isNaN(walletBalance.balance)
+                    ? `${walletBalance.balance.toFixed(2)} ${walletBalance.asset}`
+                    : "—"}
+                </div>
+              </div>
+              <button onClick={()=>{void fetchBalance();}} disabled={walletLoading} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#818cf8"}} aria-label="Refresh balance"><RefreshCw size={16} className={walletLoading?"spin":""}/></button>
+            </div>
+            <p style={{fontSize:".75rem",color:"#64748b",margin:0}}>Simulated SIM-USDC. Not real crypto. No blockchain transactions.</p>
+          </div>
+
+          {/* Transfer form / flow */}
+          <div style={{background:"var(--panel-bg,#0f1729)",borderRadius:"1rem",padding:"1.5rem",border:"1px solid rgba(99,102,241,.25)"}}>
+            {walletStep === "idle" && (
+              <>
+                <h3 style={{marginBottom:"1rem",fontSize:"1rem",color:"#e2e8f0"}}>Prepare a demo transfer</h3>
+                <label style={{fontSize:".8rem",color:"#94a3b8",display:"block",marginBottom:".25rem"}}>Recipient address (0x…)</label>
+                <input id="wallet-recipient" value={transferRecipient} onChange={e=>setTransferRecipient(e.target.value)}
+                  placeholder="0xabcdef1234567890" style={{width:"100%",marginBottom:".75rem",padding:".5rem .75rem",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:".5rem",color:"#e2e8f0",fontSize:".875rem"}}/>
+                <label style={{fontSize:".8rem",color:"#94a3b8",display:"block",marginBottom:".25rem"}}>Amount (SIM-USDC)</label>
+                <input id="wallet-amount" type="number" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)}
+                  placeholder="10.00" min="0.01" style={{width:"100%",marginBottom:"1rem",padding:".5rem .75rem",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:".5rem",color:"#e2e8f0",fontSize:".875rem"}}/>
+                <button id="wallet-prepare-btn" onClick={()=>void handlePrepare()} disabled={walletLoading}
+                  style={{width:"100%",padding:".6rem",background:"#6366f1",color:"#fff",border:"none",borderRadius:".5rem",fontWeight:600,cursor:"pointer",opacity:walletLoading?.6:1}}>
+                  {walletLoading ? "Preparing…" : "Prepare Transfer"}
+                </button>
+              </>
+            )}
+
+            {walletStep === "prepared" && preparedTx && (
+              <>
+                <h3 style={{marginBottom:".75rem",fontSize:"1rem",color:"#fbbf24"}}>⚠ Confirm this demo transfer?</h3>
+                <div style={{background:"rgba(251,191,36,.06)",borderRadius:".5rem",padding:".75rem",marginBottom:"1rem",fontSize:".85rem",color:"#e2e8f0",lineHeight:1.6}}>
+                  <div><span style={{color:"#94a3b8"}}>To:</span> <code style={{fontSize:".8rem"}}>{preparedTx.recipient}</code></div>
+                  <div><span style={{color:"#94a3b8"}}>Amount:</span> {(preparedTx.amountCents/100).toFixed(2)} SIM-USDC</div>
+                  <div><span style={{color:"#94a3b8"}}>Total debit:</span> {(preparedTx.totalDebit/100).toFixed(2)} SIM-USDC</div>
+                  <div style={{marginTop:".5rem",fontSize:".75rem",color:"#64748b"}}>Simulation only. No real funds.</div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:".5rem"}}>
+                  <button id="wallet-confirm-btn" onClick={()=>void handleConfirm()} disabled={walletLoading}
+                    style={{padding:".6rem",background:"#10b981",color:"#fff",border:"none",borderRadius:".5rem",fontWeight:600,cursor:"pointer",opacity:walletLoading?.6:1}}>
+                    <CheckCircle2 size={15} style={{marginRight:".3rem",verticalAlign:"middle"}}/>{walletLoading?"Confirming…":"Confirm"}
+                  </button>
+                  <button id="wallet-cancel-btn" onClick={()=>void handleCancel()} disabled={walletLoading}
+                    style={{padding:".6rem",background:"rgba(239,68,68,.15)",color:"#f87171",border:"1px solid rgba(239,68,68,.3)",borderRadius:".5rem",fontWeight:600,cursor:"pointer",opacity:walletLoading?.6:1}}>
+                    <XCircle size={15} style={{marginRight:".3rem",verticalAlign:"middle"}}/>{walletLoading?"Cancelling…":"Cancel"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {walletStep === "confirmed" && (
+              <div style={{textAlign:"center",padding:"1rem 0"}}>
+                <CheckCircle2 size={36} style={{color:"#10b981",marginBottom:".5rem"}}/>
+                <h3 style={{color:"#10b981",margin:"0 0 .5rem"}}>Demo transfer confirmed!</h3>
+                <p style={{fontSize:".8rem",color:"#94a3b8",marginBottom:".75rem"}}>txId: <code style={{fontSize:".75rem"}}>{confirmedTxId}</code></p>
+                <p style={{fontSize:".75rem",color:"#64748b",margin:"0 0 1rem"}}>Simulation only — no real blockchain transaction occurred.</p>
+                <button onClick={resetWallet} style={{padding:".5rem 1rem",background:"rgba(99,102,241,.15)",color:"#818cf8",border:"1px solid rgba(99,102,241,.3)",borderRadius:".5rem",cursor:"pointer",fontSize:".85rem"}}>
+                  <RotateCcw size={14} style={{marginRight:".3rem",verticalAlign:"middle"}}/> New transfer
+                </button>
+              </div>
+            )}
+
+            {walletStep === "cancelled" && (
+              <div style={{textAlign:"center",padding:"1rem 0"}}>
+                <XCircle size={36} style={{color:"#f87171",marginBottom:".5rem"}}/>
+                <h3 style={{color:"#f87171",margin:"0 0 .5rem"}}>Transfer cancelled</h3>
+                <p style={{fontSize:".8rem",color:"#94a3b8",marginBottom:"1rem"}}>The prepared transfer was cancelled. Balance unchanged.</p>
+                <button onClick={resetWallet} style={{padding:".5rem 1rem",background:"rgba(99,102,241,.15)",color:"#818cf8",border:"1px solid rgba(99,102,241,.3)",borderRadius:".5rem",cursor:"pointer",fontSize:".85rem"}}>
+                  <RotateCcw size={14} style={{marginRight:".3rem",verticalAlign:"middle"}}/> New transfer
+                </button>
+              </div>
+            )}
+
+            {walletError && <p role="alert" style={{marginTop:".75rem",color:"#f87171",fontSize:".8rem",background:"rgba(239,68,68,.08)",borderRadius:".4rem",padding:".5rem .75rem"}}>{walletError}</p>}
+          </div>
+        </div>
+
+        {/* Transaction history */}
+        <div className="panel" style={{marginTop:"1.5rem"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}>
+            <div style={{display:"flex",alignItems:"center",gap:".5rem"}}>
+              <History size={18} style={{color:"#818cf8"}}/>
+              <h3 style={{margin:0,fontSize:"1rem",color:"#e2e8f0"}}>Recent demo transactions</h3>
+            </div>
+            <button onClick={()=>void fetchHistory()} disabled={historyLoading} style={{background:"none",border:"none",cursor:"pointer",color:"#818cf8",fontSize:".8rem",display:"flex",alignItems:"center",gap:".3rem"}}>
+              <RefreshCw size={13} className={historyLoading?"spin":""}/> Refresh
+            </button>
+          </div>
+          {txHistory.length === 0 ? (
+            <p style={{color:"#64748b",fontSize:".85rem",textAlign:"center",padding:"1.5rem 0"}}>No demo transactions yet. Use the transfer form above.</p>
+          ) : (
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:".82rem",color:"#cbd5e1"}}>
+                <thead><tr style={{borderBottom:"1px solid rgba(255,255,255,.07)",color:"#64748b",textAlign:"left"}}>
+                  <th style={{padding:".5rem .75rem"}}>Status</th>
+                  <th style={{padding:".5rem .75rem"}}>Amount</th>
+                  <th style={{padding:".5rem .75rem"}}>Recipient</th>
+                  <th style={{padding:".5rem .75rem"}}>Date</th>
+                </tr></thead>
+                <tbody>
+                  {txHistory.map(tx => (
+                    <tr key={tx.id} style={{borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                      <td style={{padding:".5rem .75rem"}}>
+                        <span style={{padding:".2rem .5rem",borderRadius:"99px",fontSize:".72rem",fontWeight:600,
+                          background: tx.status==="confirmed"?"rgba(16,185,129,.15)":tx.status==="cancelled"?"rgba(239,68,68,.12)":"rgba(251,191,36,.12)",
+                          color: tx.status==="confirmed"?"#10b981":tx.status==="cancelled"?"#f87171":"#fbbf24"}}>
+                          {tx.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{padding:".5rem .75rem"}}>{tx.amount} SIM-USDC</td>
+                      <td style={{padding:".5rem .75rem"}}><code style={{fontSize:".75rem"}}>{tx.recipient?.slice(0,14)}…</code></td>
+                      <td style={{padding:".5rem .75rem",color:"#64748b"}}>{new Date(tx.createdAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
+
       <section className="bottom-banner wrap" id="compare"><div className="banner-glow"/><div className="banner-icon"><ShieldCheck size={30}/></div><div><div className="eyebrow">BUILT AROUND CLARITY</div><h2>Understand first. Decide with confidence.</h2><p>DebtTrap Escape helps organize loan information; it does not replace qualified financial or legal advice.</p></div><button className="secondary-btn" onClick={()=>document.getElementById("start-review")?.scrollIntoView({behavior:"smooth"})}>Start a review <ArrowRight size={16}/></button></section>
-      <footer className="footer wrap"><a className="brand small-brand" href="#"><span className="brand-mark"><ShieldCheck size={21}/></span><span><strong>DebtTrap <b>Escape</b></strong><small>Know. Check. Compare. Stay Safe.</small></span></a><span>Prototype · Built for transparent loan decisions</span><span>Not financial or legal advice</span></footer>
+
+      <footer className="footer wrap"><a className="brand small-brand" href="#"><BrandLogo className="brand-mark" /><span><strong>DebtTrap <b>Escape</b></strong><small>Know. Check. Compare. Stay Safe.</small></span></a><span>Prototype · Built for transparent loan decisions</span><span>Not financial or legal advice</span></footer>
     </main>
   );
 }
