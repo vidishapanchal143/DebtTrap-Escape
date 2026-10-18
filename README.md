@@ -51,14 +51,6 @@ For exact dependency versions, refer to `package.json` and the lockfile in the r
 - Screen for potential warning signs in loan offers.
 - Generate file hashes locally in the browser to help check file integrity.
 
-## 🎥 Demo Video and Weekly Submissions
-
-**Week 1 (DebtTrapEscape.v1):**
-
-https://drive.google.com/drive/folders/1WbMNvAZPOxpLzgSSSwdtlUTy4pjLIW6O?usp=drive_link
-
-**Live Demo:** Add the deployed website URL here when available.
-
 ## 🚀 Future Scope
 
 ### Week 2
