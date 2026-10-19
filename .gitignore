@@ -1,0 +1,32 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Build outputs
+frontend/dist/
+frontend/.vite/
+dist/
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local media recordings, screenshots & test artifacts
+*.mp4
+*.webm
+*.png
+scratch/
+.tempmediaStorage/
+
+# Nested subproject
+DebtTrap-Escape/
+
+# Local user data (never commit)
+*.local-data.json
