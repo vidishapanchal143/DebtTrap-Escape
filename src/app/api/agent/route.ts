@@ -11,6 +11,15 @@ import {
   cancelTransfer,
   getTransactionHistory as ledgerGetHistory,
 } from "@/lib/ledger";
+import {
+  MAX_SEPOLIA_TRANSFER_USDC,
+  MAX_SEPOLIA_TRANSFER_USDC_STR,
+} from "@/lib/sepolia-config";
+import {
+  prepareSepoliaTransferPayload,
+  prepareBaseSepoliaTransferPayload,
+} from "@/lib/transfer-intent";
+import type { SepoliaTransferParams } from "@/types/midnight";
 
 export const runtime = "nodejs";
 
@@ -27,8 +36,8 @@ const MAX_MODEL_TURNS = MAX_TOOL_CALLS + 1;
 
 function isTemporaryModelOverload(error: unknown): boolean {
   const err = error as { status?: unknown; code?: unknown; message?: unknown };
-  const details = [err?.message, err?.code].filter((value) => typeof value === "string" || typeof value === "number").join(" ").toLowerCase();
-  return err?.status === 503 || /service unavailable|temporarily unavailable|currently experiencing high demand|status.?unavailable/.test(details);
+  const details = [err?.message, err?.code, err?.status].filter((value) => typeof value === "string" || typeof value === "number").join(" ").toLowerCase();
+  return err?.status === 503 || err?.code === 503 || err?.status === "UNAVAILABLE" || /503|service unavailable|temporarily unavailable|currently experiencing high demand|status.?unavailable/i.test(details);
 }
 
 function wait(ms: number): Promise<void> {
@@ -106,6 +115,11 @@ TOOL RULES:
   - Use getTransactionHistory when the user asks to see past demo transactions.
   - Always label wallet responses as "demo" or "simulation". Never claim funds moved on a real blockchain.
   - Never ask for or use private keys, seed phrases, or real wallet credentials.
+- CRYPTO TRANSFER TOOLS (Testnets only):
+  - Use prepareSepoliaTransfer when the user asks to transfer Circle USDC on Ethereum Sepolia testnet. Strictly enforce a maximum of 0.01 USDC.
+  - Use prepareBaseSepoliaTransfer when the user asks to transfer native ETH on Base Sepolia testnet (Chain ID 84532). Strictly enforce a maximum of 0.05 ETH.
+  - After either crypto preparation tool returns, present the transaction review details clearly to the user (recipient address, amount, network, currency) and explain that explicit approval and MetaMask signature are required.
+  - Never initiate, sign, or broadcast an on-chain transaction. Transactions must always be explicitly reviewed and signed by the user via MetaMask.
 `;
 
 const LoanCostInputSchema = z.object({
@@ -266,7 +280,31 @@ const TOOL_DECLARATIONS: FunctionDeclaration[] = [
       required: ["observations"],
     },
   },
-  // ── Wallet tools (6–10 of 10) ──────────────────────────────────────────────
+  // ── Wallet & Crypto Transfer tools ──────────────────────────────────────────
+  {
+    name: "prepareSepoliaTransfer",
+    description: "Validate and prepare a real on-chain Circle USDC transfer on Ethereum Sepolia testnet. Strictly enforces a maximum of 0.01 USDC. Returns the prepared transaction parameters for user review. Does NOT sign or broadcast the transaction. The transaction MUST be explicitly reviewed and signed by the user via MetaMask. Never executes without user authorization.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        recipient: { type: Type.STRING, description: "Recipient EVM hex address (0x followed by 40 hex digits)." },
+        amount: { type: Type.NUMBER, description: "Transfer amount in USDC (must be greater than 0 and strictly 0.01 USDC or less)." },
+      },
+      required: ["recipient", "amount"],
+    },
+  },
+  {
+    name: "prepareBaseSepoliaTransfer",
+    description: "Validate and prepare a real on-chain native ETH transfer on Base Sepolia testnet (Chain ID 84532). Strictly enforces safety maximum of 0.05 ETH. Returns the prepared transaction parameters for user review. Does NOT sign or broadcast the transaction. The transaction MUST be explicitly reviewed and signed by the user via MetaMask. Never executes without user authorization.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        recipient: { type: Type.STRING, description: "Recipient EVM hex address (0x followed by 40 hex digits)." },
+        amount: { type: Type.NUMBER, description: "Transfer amount in native Base Sepolia ETH (must be greater than 0 and strictly 0.05 ETH or less)." },
+      },
+      required: ["recipient", "amount"],
+    },
+  },
   {
     name: "getWalletBalance",
     description: "Return the current demo wallet balance and asset type. Call when the user asks about their demo wallet balance or before preparing a transfer. The wallet holds simulated funds only — not real crypto.",
@@ -458,7 +496,7 @@ function evidenceSupportsSignal(signal: z.infer<typeof RedFlagSignalSchema>, quo
   }
 }
 
-async function executeTool(name: string, rawArgs: unknown, userMessage: string): Promise<{ result: Record<string, unknown>; event: ToolEvent }> {
+async function executeTool(name: string, rawArgs: unknown, userMessage: string): Promise<{ result: Record<string, unknown>; event: ToolEvent; preparedSepoliaTx?: SepoliaTransferParams }> {
   try {
     if (name === "calculateLoanCost") {
       const input = LoanCostInputSchema.parse(rawArgs);
@@ -611,7 +649,15 @@ async function executeTool(name: string, rawArgs: unknown, userMessage: string):
       };
     }
 
-    // ── Wallet tools ──────────────────────────────────────────────────────────
+    // ── Wallet & Crypto Transfer tools ──────────────────────────────────────────
+    if (name === "prepareSepoliaTransfer") {
+      return prepareSepoliaTransferPayload(rawArgs, userMessage);
+    }
+
+    if (name === "prepareBaseSepoliaTransfer") {
+      return prepareBaseSepoliaTransferPayload(rawArgs, userMessage);
+    }
+
     if (name === "getWalletBalance") {
       const bal = ledgerGetBalance();
       return {
@@ -621,12 +667,18 @@ async function executeTool(name: string, rawArgs: unknown, userMessage: string):
     }
 
     if (name === "prepareWalletTransfer") {
+      const isSepoliaRequest = /\b(sepolia|crypto|on-chain|blockchain)\b/i.test(userMessage);
       const PrepareSchema = z.object({
         recipient: z.string().regex(/^0x[0-9A-Fa-f]{8,40}$/, "Recipient must be a 0x-prefixed hex address with 8–40 hex digits."),
         amount: z.number().finite().positive().max(100_000),
         idempotencyKey: z.string().optional(),
       });
       const input = PrepareSchema.parse(rawArgs);
+
+      if (isSepoliaRequest && input.amount > MAX_SEPOLIA_TRANSFER_USDC) {
+        throw new Error(`Transfer amount (${input.amount} USDC) exceeds the strict safety maximum of ${MAX_SEPOLIA_TRANSFER_USDC_STR} USDC. Amounts above 0.01 USDC are prohibited.`);
+      }
+
       const prepared = prepareTransfer(input);
       return {
         result: { ok: true, tool: name, data: {
@@ -689,21 +741,58 @@ async function executeTool(name: string, rawArgs: unknown, userMessage: string):
         label: z.string().max(200).optional(),
       });
       const args = RegisterSchema.parse(rawArgs);
-      const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL || "");
-      const signer = new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY || "", provider);
-      const contractAddress = process.env.EVIDENCE_HASH_REGISTRY_ADDRESS;
-      if (!contractAddress) throw new Error("EvidenceHashRegistry address not set in ENV.");
-      const abi = ["function anchorHash(bytes32,string) public returns (bool)"];
+      const rpcUrl = process.env.SEPOLIA_RPC_URL?.trim() || "https://ethereum-sepolia-rpc.publicnode.com";
+      const provider = new ethers.JsonRpcProvider(rpcUrl, 11155111, { staticNetwork: true });
+      const privKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
+      if (!privKey) throw new Error("DEPLOYER_PRIVATE_KEY not configured in environment.");
+      const signer = new ethers.Wallet(privKey, provider);
+      const contractAddress = process.env.EVIDENCE_HASH_REGISTRY_ADDRESS?.trim() || "0x8638143982BfddAc9a8c60A49A6d119c5a607aBd";
+      const abi = [
+        "function anchorHash(bytes32,string) public returns (bool)",
+        "function anchoredAt(address,bytes32) public view returns (uint256)",
+      ];
       const contract = new ethers.Contract(contractAddress, abi, signer);
+      const existingTimestamp = await contract.anchoredAt(signer.address, args.hash);
+      if (Number(existingTimestamp) > 0) {
+        return {
+          result: {
+            ok: true,
+            tool: name,
+            data: {
+              anchored: false,
+              alreadyAnchored: true,
+              anchoredAtTimestamp: Number(existingTimestamp),
+              contractAddress,
+              owner: signer.address,
+            },
+          },
+          event: {
+            name,
+            status: "completed",
+            summary: `Evidence hash ${args.hash} is already anchored on-chain at timestamp ${existingTimestamp} in EvidenceHashRegistry (${contractAddress}).`,
+          },
+        };
+      }
       const tx = await contract.anchorHash(args.hash, args.label ?? "");
       const receipt = await tx.wait();
-      const anchored = receipt.status === 1; // success
+      const anchored = receipt?.status === 1;
       return {
-        result: { ok: true, tool: name, data: { anchored, transactionHash: tx.hash, receipt } },
+        result: {
+          ok: true,
+          tool: name,
+          data: {
+            anchored,
+            transactionHash: tx.hash,
+            blockNumber: receipt?.blockNumber,
+            gasUsed: receipt?.gasUsed?.toString(),
+            contractAddress,
+            explorerUrl: `https://sepolia.etherscan.io/tx/${tx.hash}`,
+          },
+        },
         event: {
           name,
           status: "completed",
-          summary: `Evidence hash ${args.hash} ${anchored ? "registered" : "already existed"} on chain; tx ${tx.hash}`,
+          summary: `Evidence hash ${args.hash} newly registered on-chain; tx ${tx.hash} (Block #${receipt?.blockNumber})`,
         },
       };
     }
@@ -742,7 +831,17 @@ export async function POST(request: Request) {
 
     if (!apiKey) {
       const fallback = fallbackLoanCalculation(parsed.data.message);
-      if (fallback) return NextResponse.json({ reply: fallback, mode: "calculation-fallback" });
+      if (fallback) {
+        return NextResponse.json({
+          reply: fallback,
+          mode: "calculation-fallback",
+          toolEvents: [{
+            name: "calculateLoanCost",
+            status: "completed",
+            summary: "Offline deterministic loan estimate computed locally."
+          }],
+        });
+      }
       return NextResponse.json(
         { error: "The AI assistant is not configured yet. A full conversational analysis needs a valid Gemini API key; explicit EMI calculations may still work from the numbers you provide." },
         { status: 503 }
@@ -757,6 +856,8 @@ export async function POST(request: Request) {
     const toolEvents: ToolEvent[] = [];
     let reply = "";
     let toolCallsExecuted = 0;
+    let latestPreparedSepoliaTx: SepoliaTransferParams | null = null;
+    let latestPreparedTx: Record<string, unknown> | null = null;
 
     for (let turn = 0; turn < MAX_MODEL_TURNS; turn += 1) {
       const budgetReached = toolCallsExecuted >= MAX_TOOL_CALLS;
@@ -779,7 +880,7 @@ export async function POST(request: Request) {
       };
       // Retry temporary 503s with backoff, then fail over to other supported
       // stable models. Authentication/configuration errors are not masked.
-      const fallbackModels = ["gemini-3.6-flash", "gemini-3.5-flash-lite"];
+      const fallbackModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"];
       const modelCandidates = [model, model, ...fallbackModels.filter((candidate) => candidate !== model)];
       let result: Awaited<ReturnType<typeof ai.models.generateContent>> | undefined;
       let lastModelError: unknown;
@@ -831,6 +932,11 @@ export async function POST(request: Request) {
         const execution = await executeTool(name, call.args ?? {}, parsed.data.message);
         toolCallsExecuted += 1;
         toolEvents.push(execution.event);
+        if (execution.preparedSepoliaTx) {
+          latestPreparedSepoliaTx = execution.preparedSepoliaTx;
+        } else if (execution.result.ok && execution.result.tool === "prepareWalletTransfer") {
+          latestPreparedTx = (execution.result.data as Record<string, unknown>) || null;
+        }
         functionResponseParts.push({
           functionResponse: {
             name,
@@ -851,8 +957,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Keep internal execution details server-side. The browser receives only the user-facing answer.
-    return NextResponse.json({ reply });
+    // Return user-facing answer along with verified tool event summaries and prepared tx for inspectable review card.
+    return NextResponse.json({
+      reply,
+      toolEvents,
+      mode: "agent",
+      ...(latestPreparedSepoliaTx ? { preparedSepoliaTx: latestPreparedSepoliaTx } : {}),
+      ...(latestPreparedTx ? { preparedTx: latestPreparedTx } : {}),
+    });
   } catch (error) {
     // Keep diagnostics in the server terminal only; never expose raw provider errors,
     // request payloads, or secrets in the user's chat.
@@ -874,7 +986,17 @@ export async function POST(request: Request) {
     }
 
     const fallback = fallbackLoanCalculation(requestMessage);
-    if (fallback) return NextResponse.json({ reply: fallback, mode: "calculation-fallback" });
+    if (fallback) {
+      return NextResponse.json({
+        reply: fallback,
+        mode: "calculation-fallback",
+        toolEvents: [{
+          name: "calculateLoanCost",
+          status: "completed",
+          summary: "Offline deterministic loan estimate computed locally."
+        }],
+      });
+    }
     return NextResponse.json({ error: safeMessage }, { status: 502 });
   }
 }

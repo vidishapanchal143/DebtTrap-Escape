@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       amountCents: prepared.amountCents,
       feeCents: prepared.feeCents,
       totalDebitCents: prepared.totalDebit,
+      totalDebit: prepared.totalDebit,
       idempotencyKey: prepared.idempotencyKey,
       message: 'Transfer prepared – confirm to commit.',
     });
