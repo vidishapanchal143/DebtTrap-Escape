@@ -128,9 +128,9 @@ The x402 payment workflow operates on **Base Sepolia** (`eip155:84532`) using th
 
 | Week | Required Deliverable Name | Description | Status & Link |
 | :---: | :--- | :--- | :--- |
-| **Week 1** | `DebtTrapEscape.v1` | Core loan math, predatory detection, Web Audio/voice, and tamper-evident SHA-256 document hashing. | **`SUBMITTED`**<br/>[Watch Week 1 Demo](https://drive.google.com/drive/folders/1WbMNvAZPOxpLzgSSSwdtlUTy4pjLIW6O?usp=drive_link) |
+| **Week 1** | `DebtTrapEscape.v1` | Core loan math, predatory detection, Web Audio/voice, and tamper-evident SHA-256 document hashing. | **`SUBMITTED`**<br/>[Watch Week 1 Demo](https://drive.google.com/file/d/10ah8-lwBvmD9HGvqHAFL4gJTj6GjXDS7/view?usp=drive_link) |
 | **Week 2** | `DebtTrapEscape.v2` | Gemini AI function calling, 0.01 USDC safety ceiling, explicit review gate, and Ethereum Sepolia on-chain evidence registry. | **`SCRIPT FINALIZED`**<br/>[`WEEK2_DEMO_SCRIPT.md`](WEEK2_DEMO_SCRIPT.md) (Recording pending user upload) |
-| **Week 3** | `DebtTrapEscape.v3` | Flagship Loan Defense File, Effective APR, contradiction engine, dynamic stress tests, and real x402 v2 Base Sepolia payments. | **`SCRIPT FINALIZED`**<br/>[`WEEK3_DEMO_SCRIPT.md`](WEEK3_DEMO_SCRIPT.md) (Recording pending user upload) |
+| **Week 3** | `DebtTrapEscape.v3` | Flagship Loan Defense File, Effective APR, contradiction engine, dynamic stress tests, and real x402 v2 Base Sepolia payments. | **`SUBMITTED`**<br/>[Watch Week 3 Demo](https://drive.google.com/file/d/10ah8-lwBvmD9HGvqHAFL4gJTj6GjXDS7/view?usp=drive_link) |
 
 ---
 
@@ -144,9 +144,9 @@ The x402 payment workflow operates on **Base Sepolia** (`eip155:84532`) using th
     - [Update 3: Demo video v1 release](https://x.com/Vdsa143/status/1899123456789012347)
   - **Week 2:** Drafted in [`WEEK2_DEMO_SCRIPT.md`](WEEK2_DEMO_SCRIPT.md) (Awaiting manual publishing)
   - **Week 3:**
-    - [Post 1: DebtTrap Escape — Update 1](https://x.com/Vdsa143/status/2109343990252556665)
-    - [Post 2: DebtTrap Escape — Update 2](https://x.com/Vdsa143/status/2109344030039654676)
-    - [Post 3: DebtTrap Escape — Update 3](https://x.com/Vdsa143/status/2109344092329312486)
+    - [Post 1: DebtTrap Escape — Update 1](https://x.com/Vdsa143/status/2114422270668214399)
+    - [Post 2: DebtTrap Escape — Update 2](https://x.com/Vdsa143/status/2114422165269586008)
+    - [Post 3: DebtTrap Escape — Update 3](https://x.com/Vdsa143/status/2114422068431454696)
 
 ---
 
