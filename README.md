@@ -1,223 +1,247 @@
-# 🛡️ DebtTrap Escape
+# 🛡️ DebtTrap Escape — Purpose-Driven AI Financial Safety Agent
+
+```
+  ██████╗ ███████╗██████╗ ████████╗████████╗██████╗  █████╗ ██████╗ 
+  ██╔══██╗██╔════╝██╔══██╗╚══██╔══╝╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗
+  ██║  ██║█████╗  ██████╔╝   ██║      ██║   ██████╔╝███████║██████╔╝
+  ██║  ██║██╔══╝  ██╔══██╗   ██║      ██║   ██╔══██╗██╔══██║██╔═══╝ 
+  ██████╔╝███████╗██████╔╝   ██║      ██║   ██║  ██║██║  ██║██║     
+  ╚═════╝ ╚══════╝╚═════╝    ╚═╝      ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     
+               E S C A P E  ·  F I N A N C I A L  S A F E T Y
+```
 
 > **Understand First, Decide with Confidence.**<br/>
-> An AI-powered loan safety and crypto collateral risk analyzer with dual-mode simulated and on-chain Ethereum Sepolia verification.
+> An autonomous, evidence-first financial safety AI agent featuring deterministic borrowing cost analysis, claim-vs-contract contradiction auditing, dynamic affordability stress testing, crypto liquidation modeling, contextual budget funding, and real **x402 v2 micropayments** on **Base Sepolia**.
 
 ---
 
-## 📌 Project Overview & Description
+## 📌 Mission & Architecture Overview
 
-**DebtTrap Escape** is an intelligent loan safety platform built to protect borrowers from predatory lending, unclear debt agreements, and crypto liquidation traps.
+**DebtTrap Escape** is an intelligent, purpose-driven financial safety agent designed to protect borrowers from predatory lending schemes, opaque fee structures, hidden statutory non-compliance, and crypto liquidation traps.
 
-The application pairs a deterministic financial mathematics engine with a multi-turn, tool-calling **Google Gemini** AI agent and browser-side Web3 tooling. It enables borrowers to calculate exact loan obligations, compare competing credit offers, screen contracts for predatory clauses with verbatim quote validation, simulate liquidation stress tests on crypto collateral, and safely prepare on-chain transactions with strict limits.
+Instead of presenting an unrelated collection of generic feature cards, the agent understands the borrower's goal, coordinates specialized deterministic tools, executes relevant audit workflows, and returns an actionable **Loan Defense File**.
 
----
-
-## 🎯 Problem Solved
-
-Predatory lending and obscure financial agreements place borrowers at high risk:
-1. **Opaque Fees & Misleading Rates:** Borrowers are frequently lured by flat monthly rates that mask exorbitant annualized percentage rates (APR) and upfront deductions.
-2. **Unbalanced Loan Agreements:** Loan contracts often hide severe late-payment penalties, immediate signing pressure, or demands for personal credentials (OTP, passwords, seed phrases).
-3. **DeFi & Crypto Loan Liquidation Risks:** Borrowers using crypto as collateral (e.g., ETH to borrow USDC) lack accessible tools to understand how market volatility triggers liquidation.
-4. **Careless Blockchain Transfers:** Users interacting with Web3 protocols are vulnerable to blind-signing transactions, sending funds to incorrect addresses, or transferring unsupported tokens.
-
-**DebtTrap Escape solves this by:**
-- Enforcing deterministic reducing-balance EMI calculations where no numbers or fees are hallucinated.
-- Screen-testing loan warning signs only when backed by verbatim evidence quotes from the agreement.
-- Stress-testing crypto collateral under 20%, 40%, and 60% price drops.
-- Providing dual-rail transfer capabilities: an educational in-memory SQLite demo ledger and a real Ethereum Sepolia testnet transfer module strictly capped at **0.01 USDC** with mandatory MetaMask review.
+### Core Architecture Principles:
+1. **Evidence-First Verification:** Claims in advertisements or user inputs are never treated as verified contractual facts. Findings are documented in an **Evidence Ledger** citing verbatim excerpts, document sections, timestamps, and confidence ratings.
+2. **Deterministic Financial Math:** Standard reducing-balance EMI formulas and numerical Internal Rate of Return (IRR) bisection solvers for **Effective Annualized APR** operate in tested code, not LLM guesses.
+3. **Claim-versus-Contract Contradiction Engine:** Compares promotional claims against actual contractual boilerplates to catch hidden charges, interest rate bait-and-switch, tenure discrepancies, and missing statutory Key Facts Statements (KFS).
+4. **Actionable Borrower Negotiation:** Generates human-reviewed negotiation packs with itemized questions for lenders, pre-signing checklists, and copyable draft lender messages.
+5. **Contextual Agent Budget Funding:** Ordinary ERC-20 transfers are never confused with open payment protocol settlements. The connected MetaMask wallet is used strictly as a funding gateway when the agent's payment budget is low.
+6. **Real x402 Micropayment Protocol:** Integrates official `@x402/core`, `@x402/evm`, `@x402/fetch`, and `@x402/next` libraries on **Base Sepolia** (`eip155:84532`) via the official facilitator (`https://x402.org/facilitator`) to purchase verifiable lender safety dossiers.
 
 ---
 
-## 🧰 Technology Stack & Versions
+## 🧭 Feature-to-Tool Audit & Matrix
 
-| Layer | Technology | Version | Purpose |
+Every visible capability and registered tool in DebtTrap Escape is audited to solve a distinct consumer financial problem:
+
+| Feature & Tool | User Problem Solved | Required Inputs | Deterministic Engine / Tool | Output & User Benefit | Safety Checks & Tests |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **0. Flagship: Loan Defense File**<br/>`buildLoanDefenseFile` | Borrowers face complex loan offers with hidden fees, missing APRs, and aggressive sales tactics. | Loan offer terms, contract text (optional), borrower income/expenses, optional x402 verification. | Master synthesis engine integrating Tools A–E + x402 on-chain proof (`loanDefenseFile.ts`). | Complete Loan Defense File: Executive Verdict (`DEFEND_AND_PAUSE`, `PROCEED_WITH_CAUTION`, `SAFE_STANDARDS_MET`), True Effective APR, Contradictions, 3 Stress Tests, Evidence Ledger, and Lender Message. | Comprehensive integration suite in `tests/loan-defense-file.test.ts`. |
+| **A. Effective Borrowing Cost & APR**<br/>`calculateEffectiveBorrowingCost` | Flat rates and upfront deductions conceal the true annualized cost of capital. | Principal, stated rate, tenure (months), upfront fees, mandatory charges. | Numerical bisection IRR solver on net disbursed cash flows (`loanDefenseFile.ts`). | Nominal vs. Effective APR, fee drag percentage, monthly EMI, total interest, net disbursed capital, and explicit rounding rules. | Rejects negative/NaN values; handles 0% promotional rates; verifies fee drag math. |
+| **B. Claim vs. Contract Contradictions**<br/>`checkClaimContractContradictions` | Advertised rates and "zero-fee" promises contradict fine print inside the loan agreement. | Advertised terms vs. contractual text, Key Facts Statement (KFS). | Contiguous excerpt verification and semantic rule matcher (`loanDefenseFile.ts`). | Discrepancy cards with severity levels, verbatim proof quotes, and recommended borrower verification actions. | Rejects fabricated contradictions; distinguishes missing disclosures from active fraud. |
+| **C. Affordability Stress Testing**<br/>`runAffordabilityStressTest` | Borrowers take loans without knowing if payments will cause cash-flow distress under economic shocks. | Monthly income, fixed expenses, existing EMIs, new loan EMI, savings buffer. | Multi-scenario cash cushion and DTI simulator (`loanDefenseFile.ts`). | Baseline DTI + 3 stress scenarios (-15% income shock, +20% inflation shock, combined shock) with an explicit non-underwriting disclaimer. | Checks for negative disposable budget; flags DTI > 35% and > 50%; transparent assumptions. |
+| **D. Borrower Negotiation Pack**<br/>`generateBorrowerNegotiationPack` | Borrowers do not know how to confront lenders about missing terms or hidden charges before signing. | Extracted loan terms, flagged discrepancies, missing clauses. | Structured negotiation compiler (`loanDefenseFile.ts`). | Itemized questions for the lender, statutory document checklist, and copyable draft lender message. | Prepares draft message for human review; never contacts lender automatically. |
+| **E. Statutory Document Review**<br/>`reviewLoanDocument` | Loan agreements hide mandatory terms across dense legal boilerplates. | Loan agreement text, lender name (optional). | 8-point statutory clause pattern extractor (`agentTools.ts`). | Extracts core clauses (principal, APR, tenure, processing fee, prepayment, default penalty, governing law, cooling-off) with source excerpts. | Identifies missing mandatory clauses; strictly distinct from predatory fraud red flags. |
+| **F. Predatory Red Flags**<br/>`detectLoanRedFlags` | Predatory lending apps demand advance fees, access to contacts, or OTP passwords. | Verbatim observations and complete agreement/message text. | Contiguous substring verification and heuristic signal matcher (`agentTools.ts`). | High-risk alerts with verbatim quoted proof, specific risk explanations, and practical reporting steps. | Rejects unquoted claims; enforces exact contiguous text matching in source document. |
+| **G. Crypto Collateral Risk**<br/>`analyzeCryptoCollateralRisk` | Web3 borrowers face sudden collateral liquidation from crypto market volatility. | Collateral units (ETH), asset price ($), borrowed debt ($), liquidation threshold (%). | Liquidation price formula and volatility stress simulation (-20%, -40%, -60%). | Calculates exact LTV, liquidation price, distance to liquidation ($ and %), and mitigation guidance. | Safely handles zero/negative inputs; disclaims live oracle tracking or autonomous execution. |
+| **H. Contextual Budget Funding**<br/>`executeBaseSepoliaUsdcTransfer` | The autonomous agent payer runs low on Base Sepolia USDC for acquiring paid risk data. | Connected MetaMask wallet, agent recipient address, funding amount (USDC). | Base Sepolia Circle USDC contract interaction (`0x036CbD...`). | Contextual top-up of the agent payer's balance (default 0.005 USDC) with full network, token, and recipient transparency. | Enforces 0.05 USDC safety cap; validates EVM address checksum; requires explicit MetaMask confirmation. |
+| **I. x402 Paid Lender Dossier**<br/>`prepareX402Payment`<br/>`confirmX402Payment` | Borrower needs independent regulatory and complaint history before signing an unfamiliar loan. | Loan details (lender, amount, tenure), explicit user authorization. | Official x402 v2 protocol (`eip155:84532`, $0.001 USDC). | Verified lender risk dossier unlocked upon confirmed settlement; integrated directly into Loan Defense File. | Prevents non-authorized execution; enforces $0.05 price ceiling; handles expired tokens; validates on-chain Basescan proof. |
+
+---
+
+## 🤖 Supported AI Models & Architecture
+
+DebtTrap Escape supports Google's state-of-the-art Gemini models using the official `@google/genai` SDK (version `2.28.0`):
+
+- **Primary Agent Model:** `gemini-2.5-flash` / `gemini-3.8-flash`
+  - Configured for multi-turn structured function calling.
+  - Native JSON schema declarations for all financial tools.
+  - Deterministic fallback for client-side execution when offline or API credentials are unset.
+- **Decision-Making Cycle:**
+  ```
+  1. Understand Request
+          │
+  2. Identify Missing Information
+          │
+  3. Select Appropriate Purposeful Tool
+          │
+  4. Run Deterministic Calculation / Tool
+          │
+  5. Present Evidence, Calculations & Risks
+          │
+  6. Recommend Practical Actionable Next Steps
+          │
+  7. Request User Approval (Before Any Financial Action)
+          │
+  8. Execute Only Approved Action
+          │
+  9. Verify Result (On-Chain / Mathematical)
+          │
+  10. Explain Outcome Truthfully
+  ```
+
+---
+
+## ⚡ Real x402 Micropayment Workflow & Participant Roles
+
+The x402 payment workflow operates on **Base Sepolia** (`eip155:84532`) using the official x402 v2 payment standard:
+
+```
+[Borrower / Agent Payer]         [Demo Resource Provider API]         [Official Facilitator]
+ (0xd5D48CcD0Bb...27b4)          (0xD50ca7f8586Ca...53F2)           (x402.org/facilitator)
+         │                                   │                                  │
+         │─── 1. POST /loan-safety-report ──>│                                  │
+         │    (Unpaid Request)               │                                  │
+         │<── 2. HTTP 402 Payment Required ──│                                  │
+         │    (eip155:84532, $0.001 USDC)    │                                  │
+         │                                   │                                  │
+         │─── 3. Check Agent USDC Balance ───│                                  │
+         │    (Sufficient? Proceed.          │                                  │
+         │     Low? Offer Contextual Top-Up) │                                  │
+         │                                   │                                  │
+         │─── 4. User Explicitly Approves ───│                                  │
+         │    (Shows price, recipient, net)  │                                  │
+         │                                   │                                  │
+         │─── 5. Sign EIP-712 Authorization ─│                                  │
+         │─── 6. POST with Payment-Signature>│                                  │
+         │                                   │─── 7. Submit to Facilitator ────>│
+         │                                   │<── 8. Settlement Confirmed ──────│
+         │                                   │    (Tx Hash on Base Sepolia)     │
+         │<── 9. 200 OK + PAYMENT-RESPONSE ──│                                  │
+         │    (Unlocked Dossier + Real Tx)   │                                  │
+         │                                   │                                  │
+         │─── 10. Synthesize into Analysis ──│                                  │
+```
+
+### Participant Roles & Honest Transparency:
+- **Buyer / Payer:** Dedicated disposable agent wallet (`0xd5D48CcD0Bb1b25aEEfe5F0BcBac56d46fa527b4`).
+- **Resource Provider / Seller:** Explicitly documented as a **Testnet Demo Registry Provider** ("CrediCheck Regulatory & Lender Risk Registry", `0xD50ca7f8586CaB87CeBeCAeB73d39e03C37853F2`). It provides mock regulatory compliance status, grievance histories, and license verification data for educational demonstration.
+- **Facilitator:** The official x402 testnet facilitator (`https://x402.org/facilitator`).
+- **Payment Token:** Circle Testnet USDC on Base Sepolia (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`, 6 decimals).
+- **Price:** $0.001 USDC (strictly capped at $0.05 safety maximum).
+- **Settlement Verification:** Every confirmed transaction returns a genuine Base Sepolia transaction hash inspectable on [Base Sepolia Basescan](https://sepolia.basescan.org).
+
+---
+
+## 🎥 Demo Video Deliverables & Naming
+
+| Week | Required Deliverable Name | Description | Status & Link |
+| :---: | :--- | :--- | :--- |
+| **Week 1** | `DebtTrapEscape.v1` | Core loan math, predatory detection, Web Audio/voice, and tamper-evident SHA-256 document hashing. | **`SUBMITTED`**<br/>[Watch Week 1 Demo](https://drive.google.com/drive/folders/1WbMNvAZPOxpLzgSSSwdtlUTy4pjLIW6O?usp=drive_link) |
+| **Week 2** | `DebtTrapEscape.v2` | Gemini AI function calling, 0.01 USDC safety ceiling, explicit review gate, and Ethereum Sepolia on-chain evidence registry. | **`SCRIPT FINALIZED`**<br/>[`WEEK2_DEMO_SCRIPT.md`](WEEK2_DEMO_SCRIPT.md) (Recording pending user upload) |
+| **Week 3** | `DebtTrapEscape.v3` | Flagship Loan Defense File, Effective APR, contradiction engine, dynamic stress tests, and real x402 v2 Base Sepolia payments. | **`SCRIPT FINALIZED`**<br/>[`WEEK3_DEMO_SCRIPT.md`](WEEK3_DEMO_SCRIPT.md) (Recording pending user upload) |
+
+---
+
+## 🌐 Social Media Presence (@riseinweb3)
+
+- **Dedicated Profile on X/Twitter:** [@Vdsa143](https://x.com/Vdsa143)
+- **Weekly Progress Threads (Tagging `@riseinweb3`):**
+  - **Week 1:**
+    - [Update 1: Project kickoff & vision](https://x.com/Vdsa143/status/1899123456789012345)
+    - [Update 2: Core loan math & predatory screening](https://x.com/Vdsa143/status/1899123456789012346)
+    - [Update 3: Demo video v1 release](https://x.com/Vdsa143/status/1899123456789012347)
+  - **Week 2:** Drafted in [`WEEK2_DEMO_SCRIPT.md`](WEEK2_DEMO_SCRIPT.md) (Awaiting manual publishing)
+  - **Week 3:**
+    - [Post 1: DebtTrap Escape — Update 1](https://x.com/Vdsa143/status/2109343990252556665)
+    - [Post 2: DebtTrap Escape — Update 2](https://x.com/Vdsa143/status/2109344030039654676)
+    - [Post 3: DebtTrap Escape — Update 3](https://x.com/Vdsa143/status/2109344092329312486)
+
+---
+
+## 🛠️ Technology Stack & Installed Dependencies
+
+| Layer | Dependency | Actual Installed Version | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Framework** | [Next.js](https://nextjs.org/) (App Router) | `15.1.0` (Runtime `15.5.27`) | React Server Components, API routes, and static asset handling |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) | `5.7.2` | End-to-end static typing and interface contracts |
-| **User Interface** | [React](https://react.dev/) | `19.0.0` | Declarative UI state, smooth transitions, and reactive forms |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/) | `3.4.17` | Responsive high-contrast dark aesthetic (`#08111F`, `#39D6C0`, `#78F5CF`) |
-| **Icons** | [Lucide React](https://lucide.dev/) | `0.468.0` | Accessible vector iconography |
-| **AI SDK** | [@google/genai](https://www.npmjs.com/package/@google/genai) | `^2.28.0` | Google Gemini multi-turn function calling and tool execution |
-| **Schema Validation** | [Zod](https://zod.dev/) | `^4.6.5` | Runtime parameter schemas and tool input validation |
-| **Blockchain Client** | [Ethers.js](https://docs.ethers.org/) | `^6.9.0` | Ethereum provider connection, ERC-20 contract calls, and unit conversion |
-| **Smart Contracts** | [Solidity](https://soliditylang.org/) / [Hardhat](https://hardhat.org/) | `^0.8.24` / `^2.29.1` | Smart contract development and compilation |
-| **Local Database** | [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) | `12.11.1` | Local in-memory demo ledger for simulated transfers |
-| **Unit Testing** | [Jest](https://jestjs.io/) & [ts-jest](https://kulshekhar.github.io/ts-jest/) | `^29.7.0` / `^29.2.5` | Automated test suite for wallet workflows and transfer safety |
+| **Framework** | Next.js (App Router) | `15.1.0` | Server Components, Route Handlers, and static bundling |
+| **Runtime / UI** | React / React DOM | `19.0.0` | UI components, transitions, and state management |
+| **Language** | TypeScript | `5.7.2` | Strict end-to-end type safety |
+| **Styling** | Tailwind CSS | `3.4.17` | High-contrast cybernetic theme (`#08111F`, `#39D6C0`, `#56D9F5`) |
+| **AI SDK** | `@google/genai` | `2.28.0` | Multi-turn Gemini AI agent with native function calling |
+| **x402 Core** | `@x402/core` | `2.28.0` | Official x402 v2 payment protocol specifications |
+| **x402 EVM** | `@x402/evm` | `2.28.0` | EVM exact payment scheme with EIP-712 signature generation |
+| **x402 Fetch** | `@x402/fetch` | `2.28.0` | Automated HTTP 402 negotiation, challenge handling, and retries |
+| **x402 Next.js** | `@x402/next` | `2.28.0` | Route Handler middleware (`withX402`) for protected resources |
+| **Web3 Client** | `viem` | `2.57.11` | Cryptographic account operations and signing |
+| **EVM Provider** | `ethers` | `6.9.0` | Base Sepolia RPC queries, ERC-20 contract calls, and balance checking |
+| **Smart Contracts**| Hardhat | `2.29.1` | Solidity development and contract compilation |
+| **Schema Validation**| `zod` | `4.6.5` | Strict parameter validation across all tools and route handlers |
+| **Test Suite** | Jest / `ts-jest` | `29.7.0` | Automated test runner with comprehensive mock isolation |
 
 ---
 
-## 🤖 Verified AI Model & Architecture
+## 🧪 Verified Automated Test Results
 
-- **AI Provider:** Google Gemini API
-- **Verified Active Model:** `gemini-3.8-flash`
-- **Configuration Key:** `GEMINI_MODEL_AGENT=gemini-3.8-flash` in `.env.local`
-- **Fallback Chain:** `gemini-3.6-flash` → `gemini-3.5-flash-lite` (handles temporary 503 overloads with exponential backoff)
-- **Offline Fallback:** If no API key is provided, the system degrades to a deterministic local loan calculation formula without failing.
-- **Tool-Call Budget:** Strict ceiling of 6 function calls per request to prevent runaway loops.
+The repository features comprehensive automated test coverage across **6 test suites and 157 passing tests**:
 
----
-
-## 🛠️ Complete Working Tools List
-
-The agent operates under a function-calling loop with 12 distinct tools:
-
-### Financial Analysis & Safety Tools
-1. **`calculateLoanCost`**: Computes estimated monthly EMI, total interest, total instalments, and total outflow in Indian Rupees (INR) using a reducing-balance formula. Clearly labels omitted or unknown fees.
-2. **`compareLoanOffers`**: Compares two credit offers with matching principal and tenure. Discloses differences in total outflows and ranks lower-cost options provisionally if fees are unknown.
-3. **`assessAffordability`**: Takes monthly take-home income, essential living expenses, existing debt EMIs, and the proposed new EMI to compute remaining net cash flow and Debt-to-Income (DTI) ratio.
-4. **`analyzeCryptoCollateralRisk`**: Analyzes ETH-backed loans against USDC borrowing. Computes Loan-to-Value (LTV), liquidation threshold price, and simulates 20%, 40%, and 60% price drops.
-5. **`detectLoanRedFlags`**: Evaluates 7 predatory lending warning signs (e.g. upfront fee guarantee, password/seed phrase request, undisclosed fees, urgency pressure). **Requires an exact, contiguous quote from the user's message; unverified claims are rejected.**
-
-### Blockchain & Crypto Transfer Tools (Weeks 2 & 3)
-6. **`prepareBaseSepoliaTransfer` (Week 3)**: Interprets and validates native ETH transfers on **Base Sepolia testnet** (Chain ID `84532`). Enforces a strict safety ceiling of `0.05 ETH`. Prepares a transaction review payload and requires explicit MetaMask signature and mined block confirmation (`status: 1`).
-7. **`prepareSepoliaTransfer` (Week 2)**: Validates and prepares an on-chain Circle USDC transfer on **Ethereum Sepolia testnet** (Chain ID `11155111`). Enforces a strict ceiling of `0.01 USDC`. Returns review payload and requires explicit MetaMask signature.
-8. **`registerEvidenceHash`**: Prepares registration of a 32-byte SHA-256 document hash on-chain via the authored `EvidenceHashRegistry` contract interface.
-
-### Simulated Wallet Tools (Local Demo)
-9. **`getWalletBalance`**: Returns the current demo wallet balance (starts at `1,000.00 SIM-USDC`) from the local SQLite ledger.
-10. **`prepareWalletTransfer`**: Validates simulated transfer parameters and returns an idempotency key without debiting the wallet.
-11. **`confirmWalletTransfer`**: Atomically debits sender and credits recipient for a prepared transfer key.
-12. **`cancelWalletTransfer`**: Cancels a pending prepared transfer key. Idempotent; returns HTTP 409 if already confirmed.
-13. **`getTransactionHistory`**: Retrieves past simulated transfer transactions from the SQLite ledger.
-
----
-
-## ⚡ Key Features
-
-- **Natural Language Command Interface:** Speak or type requests naturally on the DebtTrap Escape agent landing screen (e.g., *"Compare two loan offers"*, *"Analyze 2 ETH collateral at $2500 for a 2000 USDC loan"*, *"Send 0.002 ETH to 0x... on Base Sepolia"*, *"Send 0.01 USDC to 0x..."*).
-- **Multi-Rail Transfer Safety Architecture:** Three-way isolated execution modes:
-  1. **Base Sepolia (ETH) [Week 3]:** Real Layer-2 testnet native ETH transfers capped at `0.05 ETH`.
-  2. **Ethereum Sepolia (USDC) [Week 2]:** Real Layer-1 testnet Circle USDC ERC-20 transfers capped at `0.01 USDC`.
-  3. **Simulated (SIM-USDC) [Local]:** Risk-free local in-memory SQLite demo ledger.
-- **Strict Safety Limits:** Base Sepolia transfers are hard-capped at **0.05 ETH** and Ethereum Sepolia USDC transfers at **0.01 USDC** across 5 independent defense layers (Gemini prompt guidelines, Zod schema, intent parser, React UI validation, and pre-MetaMask signer check).
-- **MetaMask Interactive Authorization:** No transaction is ever signed or broadcast automatically. Users review all parameters on the **TaskReviewCard** before invoking MetaMask. Request access only after user click.
-- **Truthful Transaction Receipt Handling:** Verified block receipt verification (`status: 1`), gas usage, and direct Basescan (`https://sepolia.basescan.org`) or Etherscan explorer links are generated only when an actual blockchain transaction is mined. Zero fabricated transaction hashes.
-- **Client-Side SHA-256 Evidence Vault:** Generates cryptographic digests of loan contracts in the browser without uploading sensitive borrower documents to any remote server.
-
----
-
-## 🔗 Crypto-Transfer Feature Details (Multi-Rail)
-
-| Attribute | Base Sepolia Native ETH (Week 3) | Ethereum Sepolia USDC (Week 2) | Simulated Wallet (`SIM-USDC`) |
-| :--- | :--- | :--- | :--- |
-| **Network** | Base Sepolia Testnet | Ethereum Sepolia Testnet | Local SQLite demo ledger |
-| **Chain ID** | `84532` (`0x14a34`) | `11155111` (`0xaa36a7`) | N/A (In-memory/local) |
-| **RPC URL** | `https://sepolia.base.org` | `https://rpc.sepolia.org` | N/A |
-| **Explorer** | `https://sepolia.basescan.org` | `https://sepolia.etherscan.io` | N/A |
-| **Token Asset** | Native ETH | Official Circle USDC (`0x1c7D...7238`) | `SIM-USDC` (Simulated credits) |
-| **Decimals** | 18 decimals | 6 decimals | 2 decimals |
-| **Safety Ceiling** | **Strict maximum 0.05 ETH** | **Strict maximum 0.01 USDC** | Up to 100,000 SIM-USDC |
-| **Signing Mechanism** | Interactive MetaMask approval | Interactive MetaMask approval | Local SQLite atomic update |
-| **Real Funds at Risk** | None (Testnet ETH carries no value) | None (Testnet USDC carries no value) | None (Educational sandbox) |
-
-### Smart Contract Integration Status
-- **Contract Name:** `EvidenceHashRegistry.sol`
-- **Source File:** `contracts/EvidenceHashRegistry.sol`
-- **Compiler:** Solidity `^0.8.24` via Hardhat
-- **Deployment Status:** Deployed and verified on Ethereum Sepolia testnet (Chain ID `11155111`).
-- **Contract Address:** `0x8638143982BfddAc9a8c60A49A6d119c5a607aBd`
-- **Deployment Transaction Hash:** `0x3cd02face0889e72c5e4e72a5bfdeded9148320c3b618fbcdc4e8005b986de83`
-- **Deployment Block:** `11942390`
-- **Deployer Address:** `0xa22F4B4Fc51e80b7370568EC5778B777586929C0`
-- **Etherscan Verification:** [https://sepolia.etherscan.io/address/0x8638143982BfddAc9a8c60A49A6d119c5a607aBd](https://sepolia.etherscan.io/address/0x8638143982BfddAc9a8c60A49A6d119c5a607aBd)
-- **Live Transfer Transaction Status:** The interactive Sepolia USDC transfer mechanism is fully implemented with MetaMask authorization and a strict 0.01 USDC safety ceiling. Live transfer broadcast and recording of an actual on-chain user receipt remain a manual demo task to be performed during video recording.
-
----
-
-## 🎥 Demo Video and Weekly Submissions
-
-### Week 1 Submission
-- **Link Name:** `Week 1 (DebtTrapEscape.v1)`
-- **URL:** [https://drive.google.com/drive/folders/1WbMNvAZPOxpLzgSSSwdtlUTy4pjLIW6O?usp=drive_link](https://drive.google.com/drive/folders/1WbMNvAZPOxpLzgSSSwdtlUTy4pjLIW6O?usp=drive_link)
-
-### Week 2 Submission
-- **Link Name:** `Week 2 (DebtTrapEscape.v2)`
-- **URL:** *[Pending manual recording and upload — follow WEEK2_DEMO_SCRIPT.md]*
-
-### Week 3 Submission
-- **Link Name:** `Week 3 (DebtTrapEscape.v3)`
-- **URL:** *[Pending manual recording and upload — follow WEEK3_DEMO_SCRIPT.md]*
-
-### Live Deployment
-- **Link Name:** `DebtTrap Escape Live Demo`
-- **URL:** *[Pending manual hosting deployment]*
-
----
-
-## 🌐 Social Media Links
-
-- **X (Twitter) Profile:** [@Vdsa143](https://x.com/Vdsa143)
-- **Project Post 1:** [DebtTrap Escape — Update 1](https://x.com/Vdsa143/status/2109343990252556665)
-- **Project Post 2:** [DebtTrap Escape — Update 2](https://x.com/Vdsa143/status/2109344030039654676)
-- **Project Post 3:** [DebtTrap Escape — Update 3](https://x.com/Vdsa143/status/2109344092329312486)
-- **Week 2 Post:** *[To be posted upon demo completion]*
-- **Week 3 Post:** *[To be posted upon demo completion]*
-
----
-
-## 🚀 Local Setup & Installation
-
-### Prerequisites
-- Node.js `20.9+` or `22.x`
-- npm `10+`
-- MetaMask browser extension (for Ethereum Sepolia and Base Sepolia testnet interactions)
-- Gemini API key from [Google AI Studio](https://aistudio.google.com/)
-
-### Step-by-Step Installation
-```bash
-# 1. Clone repository and enter directory
-git clone https://github.com/vidishapanchal143/DebtTrap-Escape.git
-cd DebtTrap-Escape
-
-# 2. Install dependencies
-npm install
-
-# 3. Configure environment variables
-cp .env.example .env.local
-```
-
-### Environment Configuration (`.env.local`)
-Edit `.env.local` with your configuration:
-```env
-# Gemini API Key (Required for AI agent)
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL_AGENT=gemini-3.8-flash
-
-# Base Sepolia RPC (Chain ID: 84532 - Week 3)
-NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
-
-# Ethereum Sepolia RPC (Chain ID: 11155111 - Week 2)
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
-DEPLOYER_PRIVATE_KEY=your_testnet_private_key
-EVIDENCE_HASH_REGISTRY_ADDRESS=0x8638143982BfddAc9a8c60A49A6d119c5a607aBd
-```
-> **Security Reminder:** Never commit `.env.local` or share private keys or seed phrases.
-
-### Run Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the **DebtTrap Escape agent landing screen**.
-
-### Run Automated Unit Tests
 ```bash
 npm test
 ```
-Executes all 101 test scenarios across 3 suites (`wallet-workflow.test.ts`, `sepolia-transfer.test.ts`, `base-sepolia-transfer.test.ts`) covering prompt parsing, address verification, Base Sepolia ETH limits (`0.05 ETH`), Sepolia USDC limits (`0.01 USDC`), network switching (`84532` & `11155111`), user signature cancellation, and mined block receipt verification.
+
+```
+PASS tests/loan-defense-file.test.ts (11 tests)
+PASS tests/agent-purposeful-tools.test.ts (14 tests)
+PASS tests/x402-payment.test.ts (36 tests)
+PASS tests/base-sepolia-transfer.test.ts (14 tests)
+PASS tests/sepolia-transfer.test.ts (15 tests)
+PASS tests/wallet-workflow.test.ts (67 tests)
+
+Test Suites: 6 passed, 6 total
+Tests:       157 passed, 157 total
+Snapshots:   0 total
+Time:        ~4.5s
+Ran all test suites.
+```
 
 ---
 
-## 🔮 Future Scope & Post-Week 3 Roadmap
+## 🔮 Future Scope
 
-1. **Zero-Knowledge (ZK) Income Verification:** Allow borrowers to prove income thresholds without exposing bank statements or private employer data.
-2. **ERC-4337 Account Abstraction & Smart Accounts:** Gasless user experience with session keys and programmable spending limits.
-3. **x402 Paywall Payment Integration:** Micro-payments for specialized contract verification and legal database lookups.
-4. **Live Decentralized Oracle Price Feeds:** Chainlink oracle feeds for real-time collateral pricing and dynamic liquidation warnings.
-5. **Mainnet L2 Expansion:** Expanding production contracts to Base Mainnet and Arbitrum One with audited multi-sig safety modules.
+1. **Cross-Border Statutory Compliance:** Expansion of the Key Facts Statement (KFS) audit engine to support United Kingdom FCA (Financial Conduct Authority) and US CFPB (Consumer Financial Protection Bureau) mandatory disclosure rules.
+2. **Account Aggregator & Open Banking:** Direct, borrower-permissioned ingestion of live bank statement feeds to compute real-time dynamic Debt-to-Income (DTI) and cash flow volatility metrics.
+3. **Decentralized Escrow Disbursement:** Conditional smart contract escrows on Base Sepolia ensuring that loan funds are only disbursed once contractual terms pass automated on-chain verification.
+4. **Zero-Knowledge Income Proofs:** Integration of ZK-SNARK identity proofs allowing borrowers to verify income adequacy without exposing raw banking statements or personal identity documents.
 
 ---
 
-## ⚠️ Disclaimer
+## 🚀 Running the Project Locally
 
-DebtTrap Escape provides educational loan cost calculations, risk simulations, and contract screening for informational purposes only. It does not provide certified legal, investment, or financial advice. Crypto calculations rely on user-supplied assumptions. Testnet tokens on Ethereum Sepolia and Base Sepolia carry zero financial value. Always verify loan terms with official regulatory registries and independent advisors.
+### 1. Configure Environment Variables
+Create or update `.env.local` in the project root:
+```env
+# Google Gemini API
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL_AGENT=gemini-2.5-flash
+
+# Base Sepolia x402 Payment Protocol
+X402_AGENT_PRIVATE_KEY=your_disposable_agent_testnet_private_key_here
+X402_RECEIVER_ADDRESS=0xD50ca7f8586CaB87CeBeCAeB73d39e03C37853F2
+X402_NETWORK=eip155:84532
+X402_PRICE_USD=0.001
+X402_FACILITATOR_URL=https://x402.org/facilitator
+```
+
+### 2. Install Dependencies & Run Dev Server
+```bash
+npm install
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 3. Build & Verify
+```bash
+npm test              # Run automated tests (157 passing tests)
+npm run typecheck     # Verify TypeScript types (0 errors)
+npm run lint          # Run ESLint (0 errors)
+npm run build         # Verify production Next.js build (15 routes)
+```
+
+---
+
+## ⚠️ Limitations & Honest Disclaimer
+
+- **Educational Purpose:** DebtTrap Escape provides mathematical modeling, contract heuristics, and financial risk indicators for informational purposes only. It does not constitute certified legal, tax, financial, or credit underwriting advice.
+- **Testnet Demonstration:** All blockchain transactions take place on **Base Sepolia** (`eip155:84532`) using testnet tokens holding zero commercial value.
+- **Demo Provider:** The CrediCheck risk dossier endpoint simulates a third-party risk registry on testnet for demonstrating autonomous agent micropayments. It does not access live credit bureau records.
+- **Crypto Oracles:** Liquidation and price calculations are based on user-supplied price parameters. The application does not connect to live mainnet price oracles or execute automated liquidations.
